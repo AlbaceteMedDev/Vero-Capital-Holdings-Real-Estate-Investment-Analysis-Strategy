@@ -1,0 +1,2 @@
+# Vero-Capital-Holdings-Real-Estate-Investment-Analysis-Strategy
+Automated pipeline for sourcing, filtering, and ranking US real estate investment markets. Full-stack financial modeling, cash flow projections, trend analysis, cross-market correlation, and portfolio optimization. Generates strategy recommendations (concentrated, diversified, or hybrid) and investment memos for $200K–$500K in capital deployment
