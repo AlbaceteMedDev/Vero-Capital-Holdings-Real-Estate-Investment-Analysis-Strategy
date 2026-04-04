@@ -2,47 +2,52 @@
 # Weights used to rank MSAs across investment dimensions (must sum to 1.0)
 
 scoring:
-  population_growth:
-    weight: 0.12
-    description: "Year-over-year population growth rate"
-
-  net_migration:
-    weight: 0.10
-    description: "Net domestic migration inflow"
-
-  job_growth:
+  cap_rate:
     weight: 0.15
-    description: "Year-over-year employment growth rate"
+    column: cap_rate
+    description: "Capitalization rate (NOI / price)"
 
-  unemployment_rate:
-    weight: 0.08
-    description: "Current unemployment rate (lower is better)"
-    inverse: true
-
-  median_home_price:
-    weight: 0.10
-    description: "Median home price (lower preferred for entry)"
-    inverse: true
-
-  price_to_rent_ratio:
+  cash_on_cash:
     weight: 0.12
-    description: "Price-to-rent ratio (lower = better cash flow)"
-    inverse: true
+    column: cash_on_cash_return
+    description: "Cash-on-cash return"
+
+  irr_5yr:
+    weight: 0.13
+    column: irr_5yr
+    description: "5-year IRR projection"
+
+  rent_to_price:
+    weight: 0.10
+    column: monthly_rent_to_price_pct
+    description: "Monthly rent-to-price ratio"
+
+  dscr:
+    weight: 0.08
+    column: dscr
+    description: "Debt service coverage ratio"
+
+  landlord_friendliness:
+    weight: 0.10
+    column: landlord_friendliness_score
+    description: "State landlord-friendliness (1-10)"
+
+  diversification:
+    weight: 0.08
+    column: diversification_score
+    description: "Employment diversification score"
+
+  migration:
+    weight: 0.08
+    column: migration_score
+    description: "Net domestic migration score"
+
+  price_growth:
+    weight: 0.08
+    column: cagr_5yr
+    description: "5-year price appreciation CAGR"
 
   rent_growth:
-    weight: 0.10
+    weight: 0.08
+    column: rent_growth_pct
     description: "Year-over-year rent growth"
-
-  inventory_supply:
-    weight: 0.08
-    description: "Months of housing supply (lower = tighter market)"
-    inverse: true
-
-  days_on_market:
-    weight: 0.07
-    description: "Median days on market (lower = more demand)"
-    inverse: true
-
-  affordability_index:
-    weight: 0.08
-    description: "Income-to-housing-cost ratio"
