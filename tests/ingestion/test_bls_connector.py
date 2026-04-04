@@ -34,12 +34,13 @@ class TestBLSConnector:
         assert df["total_employment"].min() > 0
 
     def test_build_series_ids(self) -> None:
-        """Series IDs should follow BLS LAUS format."""
+        """Series IDs should follow BLS LAUMT format with state FIPS."""
         fips_list = ["12420", "38060"]
         series = self.connector._build_series_ids(fips_list, "03")
         assert len(series) == 2
-        assert series[0] == "LAUST124200000000003"
-        assert series[1] == "LAUST380600000000003"
+        # Format: LAUMT{state}{cbsa}00000003
+        assert series[0] == "LAUMT481242000000003"   # Austin, TX (state 48)
+        assert series[1] == "LAUMT043806000000003"   # Phoenix, AZ (state 04)
 
     def test_fetch_falls_back_to_synthetic(self) -> None:
         """fetch() should return data even without API access."""

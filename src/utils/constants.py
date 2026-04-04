@@ -2,10 +2,15 @@
 
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 # --------------------------------------------------------------------------- #
 # Directory paths (relative to project root)
 # --------------------------------------------------------------------------- #
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+# Load .env before any connector reads os.getenv()
+load_dotenv(PROJECT_ROOT / ".env", override=True)
 RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw"
 PROCESSED_DATA_DIR = PROJECT_ROOT / "data" / "processed"
 CACHE_DIR = PROJECT_ROOT / "data" / "cache"

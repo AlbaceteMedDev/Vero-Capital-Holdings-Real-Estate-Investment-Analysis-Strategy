@@ -2,28 +2,77 @@
 
 Fetches employment, job growth, and unemployment data by MSA.
 Data source: https://api.bls.gov/publicAPI/v2/
+
+BLS LAUS series ID format for metros:
+    LAUMT{state_fips}{cbsa_fips}00000003  (unemployment rate)
+    LAUMT{state_fips}{cbsa_fips}00000006  (labor force)
+    LAUMT{state_fips}{cbsa_fips}00000005  (employment)
 """
 
 import os
 from typing import Optional
 
 import pandas as pd
+import requests as req
 
 from src.ingestion.base_connector import BaseConnector
 from src.utils.logging import get_logger
 
 logger = get_logger(__name__)
 
-# BLS series ID format for MSA-level data:
-#   LAUST{fips}0000000{measure_code}  — Local Area Unemployment Statistics
-#   SMU{state}{area}0000000001        — CES employment
-# Measure codes: 03=unemployment rate, 05=employment, 06=labor force
-BLS_LAUS_PREFIX = "LAUST"
-BLS_LAUS_MEASURES = {
-    "03": "unemployment_rate",
-    "05": "total_employment",
-    "06": "labor_force",
+# CBSA FIPS -> primary state FIPS mapping for major metros
+# Required because BLS LAUS series IDs embed the state FIPS
+CBSA_STATE_MAP: dict[str, str] = {
+    "12420": "48",  # Austin, TX
+    "38060": "04",  # Phoenix, AZ
+    "40140": "06",  # Riverside, CA
+    "19740": "08",  # Denver, CO
+    "36740": "12",  # Orlando, FL
+    "45300": "12",  # Tampa, FL
+    "41700": "48",  # San Antonio, TX
+    "16740": "37",  # Charlotte, NC
+    "33460": "27",  # Minneapolis, MN
+    "26420": "48",  # Houston, TX
+    "19100": "48",  # Dallas, TX
+    "47900": "11",  # Washington, DC
+    "12060": "13",  # Atlanta, GA
+    "29820": "32",  # Las Vegas, NV
+    "34980": "47",  # Nashville, TN
+    "31080": "06",  # Los Angeles, CA
+    "41860": "06",  # San Francisco, CA
+    "35380": "22",  # New Orleans, LA
+    "39580": "37",  # Raleigh, NC
+    "27260": "12",  # Jacksonville, FL
+    "41180": "29",  # St. Louis, MO
+    "17460": "39",  # Cleveland, OH
+    "38300": "42",  # Pittsburgh, PA
+    "14460": "25",  # Boston, MA
+    "33100": "12",  # Miami, FL
+    "40060": "51",  # Richmond, VA
+    "41740": "06",  # San Diego, CA
+    "42660": "53",  # Seattle, WA
+    "38900": "41",  # Portland, OR
+    "13820": "01",  # Birmingham, AL
+    "35620": "36",  # New York, NY
+    "16980": "17",  # Chicago, IL
+    "37980": "42",  # Philadelphia, PA
+    "26900": "18",  # Indianapolis, IN
+    "18140": "39",  # Columbus, OH
+    "36420": "40",  # Oklahoma City, OK
+    "32820": "09",  # Memphis, TN  (state code for TN is 47, but primary is TN)
+    "28140": "25",  # Kansas City, MO (primary MO=29)
+    "44060": "36",  # Syracuse, NY
+    "39300": "34",  # Providence, RI (primary RI=44)
 }
+# Fix multi-state MSAs where primary state differs
+CBSA_STATE_MAP["32820"] = "47"  # Memphis -> TN
+CBSA_STATE_MAP["28140"] = "29"  # Kansas City -> MO
+CBSA_STATE_MAP["39300"] = "44"  # Providence -> RI
+
+# Measure codes
+MEASURE_UNEMPLOYMENT_RATE = "03"
+MEASURE_EMPLOYMENT = "05"
+MEASURE_LABOR_FORCE = "06"
 
 
 class BLSConnector(BaseConnector):
@@ -44,6 +93,21 @@ class BLSConnector(BaseConnector):
         self.year = year
         self.base_url = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 
+    def _build_series_id(self, cbsa_fips: str, state_fips: str, measure_code: str) -> str:
+        """Build a BLS LAUS metro series ID.
+
+        Format: LAUMT{state_fips}{cbsa_fips}00000003
+
+        Args:
+            cbsa_fips: 5-digit CBSA FIPS code.
+            state_fips: 2-digit state FIPS code.
+            measure_code: BLS measure code (03, 05, or 06).
+
+        Returns:
+            BLS series ID string.
+        """
+        return f"LAUMT{state_fips}{cbsa_fips}000000{measure_code}"
+
     def _build_series_ids(self, cbsa_fips_list: list[str], measure_code: str) -> list[str]:
         """Build BLS LAUS series IDs for a list of CBSA FIPS codes.
 
@@ -56,9 +120,9 @@ class BLSConnector(BaseConnector):
         """
         series_ids = []
         for fips in cbsa_fips_list:
-            # LAUS series: LAUST + fips(5) + 00000000 + measure(2)
-            series_id = f"{BLS_LAUS_PREFIX}{fips}00000000{measure_code}"
-            series_ids.append(series_id)
+            state = CBSA_STATE_MAP.get(fips)
+            if state:
+                series_ids.append(self._build_series_id(fips, state, measure_code))
         return series_ids
 
     def _fetch_bls_series(self, series_ids: list[str]) -> dict[str, list[dict]]:
@@ -92,7 +156,6 @@ class BLSConnector(BaseConnector):
 
             try:
                 self._rate_limit_wait()
-                import requests as req
                 resp = req.post(
                     self.base_url,
                     json=payload,
@@ -107,12 +170,67 @@ class BLSConnector(BaseConnector):
 
                 for series in result.get("Results", {}).get("series", []):
                     sid = series["seriesID"]
-                    all_results[sid] = series.get("data", [])
+                    data = series.get("data", [])
+                    if data:
+                        all_results[sid] = data
 
             except Exception as exc:
                 self.logger.warning(f"BLS batch request failed: {exc}")
 
         return all_results
+
+    def _get_latest_value(self, observations: list[dict]) -> Optional[float]:
+        """Extract the most recent value from BLS observations.
+
+        Prefers annual average (M13) if available, else latest month.
+
+        Args:
+            observations: List of BLS data point dicts.
+
+        Returns:
+            Latest value as float, or None.
+        """
+        if not observations:
+            return None
+        # Prefer annual average
+        annual = [o for o in observations if o.get("period") == "M13"]
+        if annual:
+            return float(annual[0]["value"])
+        # Fall back to latest monthly (highest period in latest year)
+        sorted_obs = sorted(
+            observations,
+            key=lambda x: (x.get("year", ""), x.get("period", "")),
+            reverse=True,
+        )
+        return float(sorted_obs[0]["value"])
+
+    def _compute_yoy_growth(self, observations: list[dict]) -> Optional[float]:
+        """Compute year-over-year growth from BLS observations.
+
+        Args:
+            observations: List of BLS data points spanning 2 years.
+
+        Returns:
+            YoY growth percentage, or None if insufficient data.
+        """
+        if not observations:
+            return None
+
+        by_year: dict[str, list[dict]] = {}
+        for o in observations:
+            yr = o.get("year", "")
+            by_year.setdefault(yr, []).append(o)
+
+        years = sorted(by_year.keys())
+        if len(years) < 2:
+            return None
+
+        curr_val = self._get_latest_value(by_year[years[-1]])
+        prev_val = self._get_latest_value(by_year[years[-2]])
+
+        if curr_val is not None and prev_val is not None and prev_val != 0:
+            return round((curr_val - prev_val) / prev_val * 100, 2)
+        return None
 
     def _generate_synthetic_data(self) -> pd.DataFrame:
         """Generate representative synthetic BLS data for pipeline testing.
@@ -162,25 +280,23 @@ class BLSConnector(BaseConnector):
     def fetch(self) -> pd.DataFrame:
         """Fetch employment and unemployment data for US MSAs.
 
-        Attempts BLS API first; falls back to synthetic data if API
-        is unreachable.
+        Queries both unemployment rate (measure 03) and employment level
+        (measure 05) for all mapped CBSAs. Computes YoY job growth from
+        the employment series.
 
         Returns:
             DataFrame with columns: cbsa_fips, total_employment,
             unemployment_rate, job_growth_pct.
         """
-        # List of major CBSA FIPS codes to query
-        major_cbsas = [
-            "12420", "38060", "40140", "19740", "36740", "45300",
-            "41700", "16740", "33460", "26420", "19100", "47900",
-            "12060", "29820", "34980", "31080", "41860", "35380",
-            "39580", "27260", "41180", "17460", "38300", "14460",
-            "33100", "40060", "41740", "42660", "38900", "13820",
-        ]
+        major_cbsas = list(CBSA_STATE_MAP.keys())
 
-        # Try fetching unemployment rate series
-        unemp_series = self._build_series_ids(major_cbsas, "03")
-        results = self._fetch_bls_series(unemp_series)
+        # Build series IDs for unemployment rate and employment
+        unemp_series = self._build_series_ids(major_cbsas, MEASURE_UNEMPLOYMENT_RATE)
+        employ_series = self._build_series_ids(major_cbsas, MEASURE_EMPLOYMENT)
+
+        # Fetch all series (unemployment + employment in one batch if possible)
+        all_series = unemp_series + employ_series
+        results = self._fetch_bls_series(all_series)
 
         if not results:
             self.logger.warning("BLS API returned no data — using synthetic data")
@@ -189,30 +305,29 @@ class BLSConnector(BaseConnector):
         # Parse results into a DataFrame
         rows = []
         for fips in major_cbsas:
-            series_id = f"{BLS_LAUS_PREFIX}{fips}0000000003"
-            observations = results.get(series_id, [])
-
-            if not observations:
+            state = CBSA_STATE_MAP.get(fips)
+            if not state:
                 continue
 
-            # Get latest annual value
-            annual_obs = [o for o in observations if o.get("period") == "M13"]
-            if not annual_obs:
-                # Fall back to latest monthly
-                annual_obs = sorted(observations, key=lambda x: x.get("period", ""), reverse=True)
+            unemp_id = self._build_series_id(fips, state, MEASURE_UNEMPLOYMENT_RATE)
+            employ_id = self._build_series_id(fips, state, MEASURE_EMPLOYMENT)
 
-            if annual_obs:
-                unemp = float(annual_obs[0].get("value", 0))
-                rows.append({"cbsa_fips": fips, "unemployment_rate": unemp})
+            unemp_val = self._get_latest_value(results.get(unemp_id, []))
+            employ_val = self._get_latest_value(results.get(employ_id, []))
+            job_growth = self._compute_yoy_growth(results.get(employ_id, []))
+
+            if unemp_val is not None or employ_val is not None:
+                rows.append({
+                    "cbsa_fips": fips,
+                    "unemployment_rate": unemp_val,
+                    "total_employment": employ_val,
+                    "job_growth_pct": job_growth,
+                })
 
         if not rows:
             self.logger.warning("No parsable BLS results — using synthetic data")
             return self._generate_synthetic_data()
 
         df = pd.DataFrame(rows)
-
-        # Add placeholder columns (employment series would require separate calls)
-        df["total_employment"] = None
-        df["job_growth_pct"] = None
-
+        self.logger.info(f"BLS live data: {len(df)} MSAs with employment/unemployment")
         return df.reset_index(drop=True)
