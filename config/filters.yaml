@@ -4,16 +4,16 @@
 filters:
   # Population minimums
   min_msa_population: 100000
-  min_population_growth_pct: 0.0   # Must be growing
+  min_population_growth_pct: 0.5   # YoY percent
 
   # Employment
-  max_unemployment_rate: 8.0       # Percent
-  min_job_growth_pct: 0.5          # Year-over-year
+  max_unemployment_rate: 6.0       # Percent
+  min_job_growth_pct: 1.0          # Year-over-year percent
 
   # Housing
-  max_median_home_price: 500000    # USD — stay within acquisition range
-  min_median_home_price: 80000     # Avoid distressed/declining markets
-  max_price_to_rent_ratio: 20.0    # Cash flow viability
+  max_median_home_price: 250000    # USD — stay within acquisition range
+  min_median_home_price: 60000     # Avoid distressed/declining markets
+  min_monthly_rent_to_price_pct: 0.7  # Monthly rent / price * 100 (cash flow viability)
   max_days_on_market: 90           # Market liquidity
 
   # Economic

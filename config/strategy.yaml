@@ -20,10 +20,42 @@ strategy:
     min_cap_rate: 0.06
     min_cash_on_cash: 0.08
     min_irr_5yr: 0.12
-    max_dscr: 1.25
+    min_dscr: 1.25
     max_ltv: 0.80
 
   market_filters:
     min_population: 100000
     max_markets_shortlist: 20
     top_markets_deep_dive: 5
+
+  # Financing assumptions for financial modeling
+  financing:
+    ltv: 0.75                  # Loan-to-value ratio
+    interest_rate: 0.07        # Annual mortgage interest rate
+    loan_term_years: 30        # Amortization period
+    cash_reserve_pct: 0.10     # Cash reserve as % of acquisition price
+
+  # Acquisition cost assumptions
+  acquisition:
+    closing_cost_pct: 0.03     # Closing costs as % of purchase price
+    rehab_reserve_pct: 0.05    # Rehab reserve as % of purchase price
+
+  # Operating expense assumptions (as % of gross rental income)
+  operating_expenses:
+    property_tax_pct: 0.012       # Annual property tax as % of property value
+    insurance_pct: 0.005          # Annual insurance as % of property value
+    maintenance_pct: 0.10         # As % of gross rent
+    vacancy_rate: 0.08            # 8% vacancy
+    property_management_pct: 0.10 # As % of gross rent
+    capex_reserve_pct: 0.05       # As % of gross rent
+
+  # Appreciation assumptions for IRR
+  appreciation:
+    annual_home_appreciation_pct: 0.03  # 3% default, overridden by market data
+    annual_rent_growth_pct: 0.03        # 3% default, overridden by market data
+
+  # Hold periods for IRR calculation
+  hold_periods:
+    - 5
+    - 7
+    - 10

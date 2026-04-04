@@ -217,7 +217,7 @@ class CensusConnector(BaseConnector):
             df["net_migration"] = df["net_domestic_migration"].fillna(df["net_migration"])
         else:
             df = acs_df.copy()
-            df["population_growth_pct"] = 0.0  # Will be enriched in later phases
+            df["population_growth_pct"] = None  # PEP unavailable; None signals missing data
 
         # Extract state FIPS from cbsa_fips (first 2 digits of the title's state)
         df["state_fips"] = ""
