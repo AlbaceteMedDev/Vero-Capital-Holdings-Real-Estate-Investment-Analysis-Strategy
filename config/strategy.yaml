@@ -1,0 +1,29 @@
+# Vero Capital Holdings — Investment Strategy Configuration
+
+strategy:
+  capital_range:
+    min: 200000
+    max: 500000
+    currency: USD
+
+  deployment_modes:
+    - concentrated    # All capital in one market
+    - diversified     # Spread across 3-5 markets
+    - hybrid          # Primary market + satellite positions
+
+  target_property_types:
+    - single_family
+    - small_multifamily  # 2-4 units
+    - townhouse
+
+  financial_targets:
+    min_cap_rate: 0.06
+    min_cash_on_cash: 0.08
+    min_irr_5yr: 0.12
+    max_dscr: 1.25
+    max_ltv: 0.80
+
+  market_filters:
+    min_population: 100000
+    max_markets_shortlist: 20
+    top_markets_deep_dive: 5

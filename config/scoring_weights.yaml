@@ -1,0 +1,48 @@
+# Vero Capital Holdings — Market Scoring Weights
+# Weights used to rank MSAs across investment dimensions (must sum to 1.0)
+
+scoring:
+  population_growth:
+    weight: 0.12
+    description: "Year-over-year population growth rate"
+
+  net_migration:
+    weight: 0.10
+    description: "Net domestic migration inflow"
+
+  job_growth:
+    weight: 0.15
+    description: "Year-over-year employment growth rate"
+
+  unemployment_rate:
+    weight: 0.08
+    description: "Current unemployment rate (lower is better)"
+    inverse: true
+
+  median_home_price:
+    weight: 0.10
+    description: "Median home price (lower preferred for entry)"
+    inverse: true
+
+  price_to_rent_ratio:
+    weight: 0.12
+    description: "Price-to-rent ratio (lower = better cash flow)"
+    inverse: true
+
+  rent_growth:
+    weight: 0.10
+    description: "Year-over-year rent growth"
+
+  inventory_supply:
+    weight: 0.08
+    description: "Months of housing supply (lower = tighter market)"
+    inverse: true
+
+  days_on_market:
+    weight: 0.07
+    description: "Median days on market (lower = more demand)"
+    inverse: true
+
+  affordability_index:
+    weight: 0.08
+    description: "Income-to-housing-cost ratio"

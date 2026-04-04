@@ -1,0 +1,24 @@
+# Vero Capital Holdings — Market Filtering Criteria
+# Markets must pass these thresholds to enter the scoring pipeline
+
+filters:
+  # Population minimums
+  min_msa_population: 100000
+  min_population_growth_pct: 0.0   # Must be growing
+
+  # Employment
+  max_unemployment_rate: 8.0       # Percent
+  min_job_growth_pct: 0.5          # Year-over-year
+
+  # Housing
+  max_median_home_price: 500000    # USD — stay within acquisition range
+  min_median_home_price: 80000     # Avoid distressed/declining markets
+  max_price_to_rent_ratio: 20.0    # Cash flow viability
+  max_days_on_market: 90           # Market liquidity
+
+  # Economic
+  min_median_household_income: 40000
+
+  # Geographic exclusions (optional)
+  exclude_states: []
+  include_states: []  # Empty = all states
