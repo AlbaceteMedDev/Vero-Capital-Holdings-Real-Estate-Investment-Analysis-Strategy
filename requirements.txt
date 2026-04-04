@@ -25,3 +25,7 @@ responses>=0.24.0
 
 # Data validation
 pandera>=0.17.0
+
+# Dashboard
+streamlit>=1.30.0
+plotly>=5.18.0
