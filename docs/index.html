@@ -4,15 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vero Capital Holdings - Real Estate Investment Dashboard</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100' height='100' rx='20' fill='%232D2D2D'/%3E%3Cpolygon points='24,22 50,82 76,22 65,22 50,60 35,22' fill='%23F0F0F0'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="vero-capital-icon-light.png">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{
-  --bg:#0F172A;--card:#1E293B;--border:#334155;
-  --primary:#0D9488;--accent:#38BDF8;
-  --text:#F8FAFC;--muted:#94A3B8;
+  --bg:#1d1d1f;--card:#2a2a2c;--border:#3a3a3c;
+  --primary:#C9A96E;--accent:#C9A96E;
+  --text:#f5f5f7;--muted:#a1a1a6;
   --sidebar-w:240px;
 }
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
@@ -25,18 +25,15 @@ a{color:var(--accent)}
   display:flex;flex-direction:column;z-index:100;
 }
 .sidebar .brand{padding:20px 20px;border-bottom:1px solid var(--border);text-align:center}
-.sidebar .brand .logo-icon{width:48px;height:48px;margin:0 auto 12px}
-.sidebar .brand h1{font-size:18px;font-weight:800;color:#F8FAFC;letter-spacing:0.08em;line-height:1.2}
-.sidebar .brand .divider{width:60%;height:1px;background:linear-gradient(90deg,transparent,#B8975A,transparent);margin:8px auto}
-.sidebar .brand p{font-size:10px;color:#B8975A;letter-spacing:0.25em;text-transform:uppercase;margin-top:4px}
+.sidebar .brand img{max-width:180px;height:auto;margin:0 auto;display:block}
 .sidebar nav{padding:12px 0;flex:1}
 .sidebar nav button{
   display:block;width:100%;text-align:left;padding:12px 20px;
   background:none;border:none;color:var(--muted);font-size:13px;
   cursor:pointer;transition:all .15s;border-left:3px solid transparent;
 }
-.sidebar nav button:hover{color:var(--text);background:rgba(13,148,136,.08)}
-.sidebar nav button.active{color:var(--primary);border-left-color:var(--primary);background:rgba(13,148,136,.1)}
+.sidebar nav button:hover{color:var(--text);background:rgba(201,169,110,.08)}
+.sidebar nav button.active{color:var(--primary);border-left-color:var(--primary);background:rgba(201,169,110,.1)}
 
 /* Main */
 .main{margin-left:var(--sidebar-w);flex:1;padding:32px;max-width:1400px}
@@ -121,15 +118,7 @@ h2.section-title{font-size:18px;color:var(--text);margin-bottom:16px;padding-bot
 
 <div class="sidebar">
   <div class="brand">
-    <div class="logo-icon">
-      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="20" fill="#2D2D2D"/>
-        <polygon points="24,22 50,82 76,22 65,22 50,60 35,22" fill="#F0F0F0"/>
-      </svg>
-    </div>
-    <h1>VERO</h1>
-    <div class="divider"></div>
-    <p>Capital Holdings</p>
+    <img src="vero-final-dark-trimmed.png" alt="Vero Capital Holdings">
   </div>
   <nav>
     <button class="active" onclick="showTab('summary',this)">Executive Summary</button>
@@ -209,13 +198,13 @@ const DATA_CAPITAL = [{"capital": 200000, "recommended_strategy": "concentrated"
 const DATA_CORR = {"labels": ["Decatur, IL Metro Area", "Abilene, TX Metro Area", "Lawton, OK Metro Area", "Lumberton, NC Micro Area", "Beaumont-Port Arthur, TX Metro Area", "Bay City, MI Metro Area", "Jackson, MS Metro Area", "Wichita Falls, TX Metro Area", "Houma-Bayou Cane-Thibodaux, LA Metro Area", "Goldsboro, NC Metro Area", "Pottsville, PA Micro Area", "Shreveport-Bossier City, LA Metro Area", "Brownsville-Harlingen, TX Metro Area", "Paducah, KY-IL Metro Area", "Beckley, WV Metro Area", "Charleston, WV Metro Area", "Tuscaloosa, AL Metro Area", "Danville, VA Micro Area"], "values": [[1.0, 0.407, 0.579, 0.482, 0.459, 0.597, 0.391, 0.517, 0.444, 0.48, 0.554, 0.405, 0.367, 0.567, 0.498, 0.512, 0.409, 0.503], [0.407, 1.0, 0.465, 0.314, 0.641, 0.472, 0.464, 0.641, 0.462, 0.44, 0.517, 0.404, 0.587, 0.493, 0.359, 0.433, 0.482, 0.395], [0.579, 0.465, 1.0, 0.502, 0.535, 0.622, 0.496, 0.594, 0.529, 0.59, 0.638, 0.526, 0.489, 0.598, 0.551, 0.588, 0.515, 0.563], [0.482, 0.314, 0.502, 1.0, 0.395, 0.447, 0.344, 0.501, 0.459, 0.665, 0.465, 0.471, 0.419, 0.504, 0.602, 0.549, 0.415, 0.602], [0.459, 0.641, 0.535, 0.395, 1.0, 0.542, 0.606, 0.743, 0.582, 0.533, 0.583, 0.61, 0.733, 0.566, 0.444, 0.546, 0.576, 0.476], [0.597, 0.472, 0.622, 0.447, 0.542, 1.0, 0.494, 0.586, 0.528, 0.583, 0.592, 0.504, 0.47, 0.619, 0.5, 0.522, 0.512, 0.545], [0.391, 0.464, 0.496, 0.344, 0.606, 0.494, 1.0, 0.515, 0.505, 0.502, 0.497, 0.57, 0.614, 0.499, 0.393, 0.495, 0.607, 0.424], [0.517, 0.641, 0.594, 0.501, 0.743, 0.586, 0.515, 1.0, 0.627, 0.621, 0.627, 0.578, 0.657, 0.637, 0.55, 0.608, 0.581, 0.581], [0.444, 0.462, 0.529, 0.459, 0.582, 0.528, 0.505, 0.627, 1.0, 0.581, 0.566, 0.727, 0.498, 0.566, 0.554, 0.591, 0.569, 0.517], [0.48, 0.44, 0.59, 0.665, 0.533, 0.583, 0.502, 0.621, 0.581, 1.0, 0.559, 0.584, 0.526, 0.603, 0.565, 0.591, 0.568, 0.592], [0.554, 0.517, 0.638, 0.465, 0.583, 0.592, 0.497, 0.627, 0.566, 0.559, 1.0, 0.511, 0.473, 0.603, 0.514, 0.567, 0.515, 0.538], [0.405, 0.404, 0.526, 0.471, 0.61, 0.504, 0.57, 0.578, 0.727, 0.584, 0.511, 1.0, 0.619, 0.528, 0.52, 0.591, 0.59, 0.549], [0.367, 0.587, 0.489, 0.419, 0.733, 0.47, 0.614, 0.657, 0.498, 0.526, 0.473, 0.619, 1.0, 0.491, 0.459, 0.509, 0.592, 0.5], [0.567, 0.493, 0.598, 0.504, 0.566, 0.619, 0.499, 0.637, 0.566, 0.603, 0.603, 0.528, 0.491, 1.0, 0.553, 0.567, 0.533, 0.602], [0.498, 0.359, 0.551, 0.602, 0.444, 0.5, 0.393, 0.55, 0.554, 0.565, 0.514, 0.52, 0.459, 0.553, 1.0, 0.748, 0.464, 0.62], [0.512, 0.433, 0.588, 0.549, 0.546, 0.522, 0.495, 0.608, 0.591, 0.591, 0.567, 0.591, 0.509, 0.567, 0.748, 1.0, 0.566, 0.582], [0.409, 0.482, 0.515, 0.415, 0.576, 0.512, 0.607, 0.581, 0.569, 0.568, 0.515, 0.59, 0.592, 0.533, 0.464, 0.566, 1.0, 0.495], [0.503, 0.395, 0.563, 0.602, 0.476, 0.545, 0.424, 0.581, 0.517, 0.592, 0.538, 0.549, 0.5, 0.602, 0.62, 0.582, 0.495, 1.0]]};
 const DATA_MEMO = "# Vero Capital Holdings \u2014 Investment Memo\n\n**Date:** April 04, 2026\n**Prepared by:** Vero Capital Holdings Analytical Engine\n**Capital Budget:** $350,000\n**Markets Analyzed:** 18\n**Recommended Strategy:** Diversified\n\n---\n\n## 1. Executive Summary\n\n### Strategy Recommendation: **Diversified**\n\nDiversified strategy recommended: spreading capital across multiple markets provides meaningful diversification benefit with comparable returns.\n\n**Key Metrics:**\n- **Capital Deployed:** $350,000\n- **Total Properties:** 4\n- **Annual Cash Flow:** $-5,733\n- **Projected 5-Year IRR:** -0.1%\n- **Markets:** Decatur, IL Metro Area, Abilene, TX Metro Area, Lawton, OK Metro Area, Lumberton, NC Micro Area\n\n**Top-Ranked Markets:** Decatur, IL Metro Area, Abilene, TX Metro Area, Lawton, OK Metro Area\n\nThe analysis evaluated 18 US metropolitan areas that passed rigorous screening on population, affordability, cash flow viability, employment strength, and landlord-friendliness. Each market was modeled with full financial projections including cap rate, cash-on-cash return, DSCR, and multi-horizon IRR.\n\n## 2. Optimal Capital Allocation\n\n| Market | Allocation | Properties | Weight |\n|--------|-----------|-----------|--------|\n| Decatur, IL Metro Area | $87,500 | 1 | 25% |\n| Abilene, TX Metro Area | $87,500 | 1 | 25% |\n| Lawton, OK Metro Area | $87,500 | 1 | 25% |\n| Lumberton, NC Micro Area | $87,500 | 1 | 25% |\n| **Cash Reserve** | **$0** | \u2014 | 0% |\n| **Total** | **$350,000** | **4** | **100%** |\n\n## 3. Market Profiles\n\n### #1: Decatur, IL Metro Area\n- **Composite Score:** 69.9/100\n- **Population:** 102,591 | **State:** IL\n- **Median Home Price:** $119,169 | **Median Rent:** $1,124/mo\n- **Cap Rate:** 5.9% | **Cash-on-Cash:** -0.2% | **DSCR:** 0.98x\n- **5-Year IRR:** 12.1%\n- **Landlord-Friendliness:** 5/10 | Eviction: ~35 days | Rent Control: local_allowed\n\n### #2: Abilene, TX Metro Area\n- **Composite Score:** 69.4/100\n- **Population:** 178,244 | **State:** TX\n- **Median Home Price:** $204,420 | **Median Rent:** $1,770/mo\n- **Cap Rate:** 5.3% | **Cash-on-Cash:** -1.7% | **DSCR:** 0.88x\n- **5-Year IRR:** 11.1%\n- **Landlord-Friendliness:** 9/10 | Eviction: ~21 days | Rent Control: preempted\n\n### #3: Lawton, OK Metro Area\n- **Composite Score:** 36.0/100\n- **Population:** 127,174 | **State:** OK\n- **Median Home Price:** $151,594 | **Median Rent:** $1,114/mo\n- **Cap Rate:** 4.2% | **Cash-on-Cash:** -4.1% | **DSCR:** 0.70x\n- **5-Year IRR:** -2.0%\n- **Landlord-Friendliness:** 8/10 | Eviction: ~16 days | Rent Control: preempted\n\n### #4: Lumberton, NC Micro Area\n- **Composite Score:** 33.0/100\n- **Population:** 116,858 | **State:** NC\n- **Median Home Price:** $128,023 | **Median Rent:** $1,046/mo\n- **Cap Rate:** 4.9% | **Cash-on-Cash:** -2.6% | **DSCR:** 0.81x\n- **5-Year IRR:** -21.9%\n- **Landlord-Friendliness:** 8/10 | Eviction: ~21 days | Rent Control: preempted\n\n### #5: Beaumont-Port Arthur, TX Metro Area\n- **Composite Score:** 29.9/100\n- **Population:** 396,058 | **State:** TX\n- **Median Home Price:** $177,553 | **Median Rent:** $1,273/mo\n- **Cap Rate:** 4.1% | **Cash-on-Cash:** -4.5% | **DSCR:** 0.68x\n- **5-Year IRR:** -8.8%\n- **Landlord-Friendliness:** 9/10 | Eviction: ~21 days | Rent Control: preempted\n\n\n## 4. Financial Projections Across Hold Periods\n\n| Market | Cap Rate | CoC Return | DSCR | 5yr IRR | 7yr IRR | 10yr IRR |\n|--------|----------|-----------|------|---------|---------|----------|\n| Decatur, IL Metro Area | 5.9% | -0.2% | 0.98x | 12.1% | 14.8% | 16.2% |\n| Abilene, TX Metro Area | 5.3% | -1.7% | 0.88x | 11.1% | 20.5% | 29.6% |\n| Lawton, OK Metro Area | 4.2% | -4.1% | 0.70x | -2.0% | 1.9% | 4.7% |\n| Lumberton, NC Micro Area | 4.9% | -2.6% | 0.81x | -21.9% | -14.4% | -5.3% |\n| Beaumont-Port Arthur, TX Metro Area | 4.1% | -4.5% | 0.68x | -8.8% | -3.8% | 0.4% |\n| Bay City, MI Metro Area | 4.1% | -4.3% | 0.69x | 4.1% | 7.4% | 9.5% |\n| Jackson, MS Metro Area | 4.0% | -4.6% | 0.67x | -9.3% | -4.5% | -0.6% |\n| Wichita Falls, TX Metro Area | 4.3% | -4.0% | 0.71x | -18.1% | -12.3% | -6.5% |\n| Houma-Bayou Cane-Thibodaux, LA Metr | 4.3% | -3.8% | 0.72x | N/A | N/A | N/A |\n| Goldsboro, NC Metro Area | 4.5% | -3.5% | 0.74x | -21.6% | -16.5% | -11.2% |\n\n## 5. Correlation Analysis\n\nCross-market price correlation matrix (18 markets):\n- **Average pairwise correlation:** 0.534\n- **Interpretation:** Moderate correlation \u2014 limited diversification benefit\n\n**Best diversification pairs (lowest correlation):**\n- Abilene, TX Metro Area \u2194 Lumberton, NC Micro Area: 0.314\n- Lumberton, NC Micro Area \u2194 Jackson, MS Metro Area: 0.344\n- Abilene, TX Metro Area \u2194 Beckley, WV Metro Area: 0.359\n- Decatur, IL Metro Area \u2194 Brownsville-Harlingen, TX Metr: 0.367\n- Decatur, IL Metro Area \u2194 Jackson, MS Metro Area: 0.391\n\n## 6. Comparable Market Benchmarks\n\n**Decatur, IL Metro Area:**\n- Comparables: ['Weirton-Steubenville, WV-OH Metro Area', 'Salem, OH Micro Area', 'Meridian, MS Micro Area', 'Bluefield, WV-VA Micro Area']\n- Comp avg price: $133,763 vs $119,169 (this market)\n- Comp avg rent: $962 vs $1,124 (this market)\n- Comp avg price growth: -1.4% vs 8.3% (this market)\n\n**Abilene, TX Metro Area:**\n- Comparables: ['Jackson, TN Metro Area', 'Waterloo-Cedar Falls, IA Metro Area', 'Jackson, MI Metro Area', 'Muskegon-Norton Shores, MI Metro Area']\n- Comp avg price: $212,651 vs $204,420 (this market)\n- Comp avg rent: $1,195 vs $1,770 (this market)\n- Comp avg price growth: 2.5% vs 3.6% (this market)\n\n**Lawton, OK Metro Area:**\n- Comparables: ['Jamestown-Dunkirk, NY Micro Area', 'Altoona, PA Metro Area', 'Wheeling, WV-OH Metro Area', 'Muncie, IN Metro Area']\n- Comp avg price: $157,351 vs $151,594 (this market)\n- Comp avg rent: $943 vs $1,114 (this market)\n- Comp avg price growth: 4.4% vs 4.3% (this market)\n\n**Lumberton, NC Micro Area:**\n- Comparables: ['Bluefield, WV-VA Micro Area', 'Weirton-Steubenville, WV-OH Metro Area', 'Opelousas, LA Micro Area', 'Meridian, MS Micro Area']\n- Comp avg price: $128,284 vs $128,023 (this market)\n- Comp avg rent: $925 vs $1,046 (this market)\n- Comp avg price growth: -3.8% vs -2.7% (this market)\n\n**Beaumont-Port Arthur, TX Metro Area:**\n- Comparables: ['Flint, MI Metro Area', 'Canton-Massillon, OH Metro Area', 'Davenport-Moline-Rock Island, IA-IL Metro Area', 'Lafayette, LA Metro Area']\n- Comp avg price: $193,504 vs $177,553 (this market)\n- Comp avg rent: $1,093 vs $1,273 (this market)\n- Comp avg price growth: 3.9% vs 1.8% (this market)\n\n\n## 7. Risk Factors and Sensitivity\n\n### Strategy Risk Comparison\n\n| Strategy | Sharpe | Vol | Div Benefit | Conc HHI | Max DD Est |\n|----------|--------|-----|-------------|----------|-----------|\n| Concentrated | 0.46 | 21.7% | 0.0% | 10,000 | 43.3% |\n| Diversified | 0.36 | 11.3% | 21.5% | 2,500 | 22.7% |\n| Hybrid | 0.48 | 16.0% | 12.0% | 4,400 | 31.9% |\n\n### Key Risk Factors\n- **Interest rate risk:** Current 7%+ mortgage rates compress cash-on-cash returns\n- **Vacancy risk:** Smaller markets may have thinner tenant pools\n- **Liquidity risk:** Sub-$250K markets may have longer disposition timelines\n- **Concentration risk:** Single-market exposure to local economic shocks\n- **Regulatory risk:** State-level landlord-tenant law changes\n\n## 8. Capital Sensitivity Analysis\n\nHow the recommended strategy shifts from $200K to $500K:\n\n| Capital | Strategy | Properties | Markets | Annual CF | 5yr IRR |\n|---------|----------|-----------|---------|-----------|---------|\n| $200,000 | Concentrated | 3 | 1 | $-365 | 12.1% |\n| $250,000 | Concentrated | 4 | 1 | $-486 | 12.1% |\n| $300,000 | Concentrated | 5 | 1 | $-608 | 12.1% |\n| $350,000 | Concentrated | 6 | 1 | $-729 | 12.1% |\n| $400,000 | Concentrated | 7 | 1 | $-851 | 12.1% |\n| $450,000 | Concentrated | 8 | 1 | $-972 | 12.1% |\n| $500,000 | Concentrated | 9 | 1 | $-1,094 | 12.1% |\n\n## 9. Recommended Acquisition Timeline\n\n| Phase | Timeline | Action |\n|-------|----------|--------|\n| **Due Diligence** | Weeks 1-4 | On-ground market visits, property manager interviews, contractor bids |\n| **Primary Market** | Weeks 4-8 | Acquire first 2 properties in top-ranked market |\n| **Satellite Markets** | Weeks 8-16 | Acquire remaining 2 properties across 3 satellite markets |\n| **Stabilization** | Weeks 16-24 | Complete rehab, tenant placement, PM onboarding |\n| **Optimization** | Months 6-12 | Rent optimization, expense reduction, refinance evaluation |\n\n**Total deployment window:** 4-6 months for full capital deployment across 4 market(s).\n\n---\n\n*This memo was auto-generated by the Vero Capital Holdings analytical pipeline. Projections are based on publicly available data and standard financial assumptions. Actual returns will vary based on property-specific factors, market conditions, and execution. This is not financial advice \u2014 consult qualified professionals before making investment decisions.*";
 
-const PALETTE = ["#0D9488","#38BDF8","#A78BFA","#FB923C","#F472B6","#34D399","#FBBF24","#818CF8"];
+const PALETTE = ["#C9A96E","#E8D5B0","#8B7D6B","#D4A849","#A89060","#BFA76F","#F0DBA8","#9C8B6E"];
 const PLOTLY_LAYOUT = {
   paper_bgcolor:'transparent', plot_bgcolor:'transparent',
   font:{color:'#F8FAFC',size:12},
   margin:{t:40,b:50,l:60,r:20},
-  xaxis:{gridcolor:'#334155',zerolinecolor:'#334155'},
-  yaxis:{gridcolor:'#334155',zerolinecolor:'#334155'},
+  xaxis:{gridcolor:'#3a3a3c',zerolinecolor:'#3a3a3c'},
+  yaxis:{gridcolor:'#3a3a3c',zerolinecolor:'#3a3a3c'},
 };
 const PLOTLY_CFG = {displayModeBar:false,responsive:true};
 
@@ -448,7 +437,7 @@ function renderPortfolio(){
   const labels = DATA_CORR.labels.map(shortName);
   Plotly.newPlot('corr-heatmap', [{
     z:DATA_CORR.values, x:labels, y:labels,
-    type:'heatmap', colorscale:[[0,'#0F172A'],[0.5,'#0D9488'],[1,'#38BDF8']],
+    type:'heatmap', colorscale:[[0,'#1d1d1f'],[0.5,'#8B7D6B'],[1,'#C9A96E']],
     zmin:0, zmax:1,
   }], {
     ...PLOTLY_LAYOUT,
