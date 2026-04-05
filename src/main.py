@@ -190,9 +190,34 @@ def run_full(capital: float = 350_000) -> None:
     run_optimize(capital)
     run_memo(capital)
 
+    # Auto-rebuild static dashboard
+    _rebuild_dashboard()
+
     logger.info("=" * 60)
     logger.info("FULL PIPELINE COMPLETE")
     logger.info("=" * 60)
+
+
+def _rebuild_dashboard() -> None:
+    """Regenerate the static HTML dashboard from pipeline outputs."""
+    import subprocess
+    from src.utils.constants import PROJECT_ROOT
+
+    generate_script = PROJECT_ROOT / "scripts" / "generate_html.py"
+    if not generate_script.exists():
+        logger.warning("scripts/generate_html.py not found — skipping dashboard rebuild")
+        return
+
+    logger.info("Rebuilding static dashboard (docs/index.html)")
+    result = subprocess.run(
+        [sys.executable, str(generate_script)],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True, text=True, timeout=60,
+    )
+    if result.returncode == 0:
+        logger.info("Dashboard rebuilt successfully")
+    else:
+        logger.warning(f"Dashboard rebuild failed: {result.stderr[-200:]}")
 
 
 def main() -> None:
