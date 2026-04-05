@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vero Capital Holdings - Real Estate Investment Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0F172A;--card:#1E293B;--border:#334155;
+  --primary:#0D9488;--accent:#38BDF8;
+  --text:#F8FAFC;--muted:#94A3B8;
+  --sidebar-w:240px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+a{color:var(--accent)}
+
+/* Sidebar */
+.sidebar{
+  width:var(--sidebar-w);min-height:100vh;background:var(--card);
+  border-right:1px solid var(--border);position:fixed;top:0;left:0;
+  display:flex;flex-direction:column;z-index:100;
+}
+.sidebar .brand{padding:24px 20px;border-bottom:1px solid var(--border)}
+.sidebar .brand h1{font-size:16px;color:var(--primary);line-height:1.3}
+.sidebar .brand p{font-size:11px;color:var(--muted);margin-top:4px}
+.sidebar nav{padding:12px 0;flex:1}
+.sidebar nav button{
+  display:block;width:100%;text-align:left;padding:12px 20px;
+  background:none;border:none;color:var(--muted);font-size:13px;
+  cursor:pointer;transition:all .15s;border-left:3px solid transparent;
+}
+.sidebar nav button:hover{color:var(--text);background:rgba(13,148,136,.08)}
+.sidebar nav button.active{color:var(--primary);border-left-color:var(--primary);background:rgba(13,148,136,.1)}
+
+/* Main */
+.main{margin-left:var(--sidebar-w);flex:1;padding:32px;max-width:1400px}
+.tab{display:none}.tab.active{display:block}
+
+/* Cards */
+.cards{display:grid;gap:16px;margin-bottom:24px}
+.cards-4{grid-template-columns:repeat(4,1fr)}
+.cards-3{grid-template-columns:repeat(3,1fr)}
+.cards-2{grid-template-columns:repeat(2,1fr)}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px}
+.card .label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+.card .value{font-size:28px;font-weight:700;margin-top:6px;color:var(--text)}
+.card .sub{font-size:12px;color:var(--muted);margin-top:4px}
+.card.strategy-card .value{font-size:20px}
+.card.strategy-card{border-top:3px solid var(--primary)}
+
+/* Table */
+.table-wrap{overflow-x:auto;margin-bottom:24px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:var(--card);position:sticky;top:0;cursor:pointer;padding:10px 12px;
+    text-align:left;color:var(--muted);font-weight:600;border-bottom:2px solid var(--border);
+    user-select:none;white-space:nowrap}
+th:hover{color:var(--primary)}
+th .sort-arrow{margin-left:4px;font-size:10px}
+td{padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap}
+tr:hover td{background:rgba(13,148,136,.05)}
+
+/* Chart containers */
+.chart-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:24px}
+.chart-row{display:grid;gap:16px;margin-bottom:24px}
+.chart-row-2{grid-template-columns:1fr 1fr}
+
+/* Dropdown */
+select{background:var(--card);color:var(--text);border:1px solid var(--border);
+  padding:10px 14px;border-radius:8px;font-size:14px;margin-bottom:20px;min-width:300px}
+select:focus{outline:none;border-color:var(--primary)}
+
+/* Memo */
+.memo-content{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:32px;line-height:1.7;font-size:14px}
+.memo-content h1,.memo-content h2,.memo-content h3{color:var(--primary);margin:24px 0 12px}
+.memo-content h1{font-size:22px}.memo-content h2{font-size:18px}.memo-content h3{font-size:15px}
+.memo-content table{margin:16px 0}.memo-content th,.memo-content td{padding:6px 12px}
+.memo-content hr{border:none;border-top:1px solid var(--border);margin:20px 0}
+.memo-content ul,.memo-content ol{padding-left:24px;margin:8px 0}
+.memo-content strong{color:var(--accent)}
+.memo-content code{background:var(--bg);padding:2px 6px;border-radius:4px;font-size:13px}
+.memo-content blockquote{border-left:3px solid var(--primary);padding-left:16px;color:var(--muted);margin:12px 0}
+
+.btn{background:var(--primary);color:#fff;border:none;padding:10px 20px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600}
+.btn:hover{opacity:.9}
+
+h2.section-title{font-size:18px;color:var(--text);margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* Risk tag */
+.risk-tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;margin:2px}
+.risk-tag.green{background:rgba(13,148,136,.2);color:#34D399}
+.risk-tag.yellow{background:rgba(251,191,36,.2);color:#FBBF24}
+.risk-tag.red{background:rgba(244,114,182,.2);color:#F472B6}
+
+/* Deep dive panels */
+.dd-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+.comp-list{list-style:none;padding:0}.comp-list li{padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+
+@media(max-width:1100px){
+  .cards-4{grid-template-columns:repeat(2,1fr)}
+  .cards-3{grid-template-columns:1fr}
+  .chart-row-2{grid-template-columns:1fr}
+  .dd-grid{grid-template-columns:1fr}
+}
+@media(max-width:768px){
+  .sidebar{width:100%;height:auto;position:relative;flex-direction:row;min-height:auto}
+  .sidebar .brand{display:none}
+  .sidebar nav{display:flex;padding:0;overflow-x:auto}
+  .sidebar nav button{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;padding:10px 16px}
+  .sidebar nav button.active{border-bottom-color:var(--primary);border-left-color:transparent}
+  .main{margin-left:0}
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="brand">
+    <h1>Vero Capital<br>Holdings</h1>
+    <p>Investment Analytics</p>
+  </div>
+  <nav>
+    <button class="active" onclick="showTab('summary',this)">Executive Summary</button>
+    <button onclick="showTab('rankings',this)">Market Rankings</button>
+    <button onclick="showTab('deepdive',this)">Market Deep Dive</button>
+    <button onclick="showTab('portfolio',this)">Portfolio Optimization</button>
+    <button onclick="showTab('memo',this)">Investment Memo</button>
+  </nav>
+</div>
+
+<div class="main">
+
+<!-- TAB 1: Executive Summary -->
+<div id="tab-summary" class="tab active">
+  <h2 class="section-title">Executive Summary</h2>
+  <div id="summary-cards" class="cards cards-4"></div>
+  <div id="strategy-cards" class="cards cards-3"></div>
+  <div class="chart-box">
+    <div id="capital-chart" style="height:400px"></div>
+  </div>
+</div>
+
+<!-- TAB 2: Market Rankings -->
+<div id="tab-rankings" class="tab">
+  <h2 class="section-title">Market Rankings</h2>
+  <div class="table-wrap">
+    <table id="rankings-table">
+      <thead><tr id="rankings-head"></tr></thead>
+      <tbody id="rankings-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- TAB 3: Market Deep Dive -->
+<div id="tab-deepdive" class="tab">
+  <h2 class="section-title">Market Deep Dive</h2>
+  <select id="market-select" onchange="renderDeepDive()"></select>
+  <div id="dd-cards" class="cards cards-4"></div>
+  <div class="chart-row chart-row-2">
+    <div class="chart-box"><div id="dd-cashflow" style="height:300px"></div></div>
+    <div class="chart-box"><div id="dd-irr" style="height:300px"></div></div>
+  </div>
+  <div class="chart-row chart-row-2">
+    <div class="chart-box"><div id="dd-cagr" style="height:300px"></div></div>
+    <div class="chart-box" id="dd-comps-box">
+      <h3 style="font-size:14px;color:var(--muted);margin-bottom:12px">Comparable Markets</h3>
+      <div id="dd-comps"></div>
+    </div>
+  </div>
+  <div class="card" id="dd-risk" style="margin-top:8px"></div>
+</div>
+
+<!-- TAB 4: Portfolio Optimization -->
+<div id="tab-portfolio" class="tab">
+  <h2 class="section-title">Portfolio Optimization</h2>
+  <div class="chart-box"><div id="corr-heatmap" style="height:550px"></div></div>
+  <div class="chart-row chart-row-2">
+    <div class="chart-box"><div id="risk-return" style="height:380px"></div></div>
+    <div class="chart-box"><div id="div-benefit" style="height:380px"></div></div>
+  </div>
+</div>
+
+<!-- TAB 5: Investment Memo -->
+<div id="tab-memo" class="tab">
+  <h2 class="section-title">Investment Memo</h2>
+  <button class="btn" onclick="downloadMemo()" style="margin-bottom:16px">Download Memo (.md)</button>
+  <div id="memo-rendered" class="memo-content"></div>
+</div>
+
+</div><!-- /main -->
+
+<script>
+// ── Embedded Data ──
+const DATA_MARKETS = [{"cbsa_fips": "19500", "cbsa_title": "Decatur, IL Metro Area", "state_fips": "", "population": 102591, "population_growth_pct": null, "net_migration": 1377.0, "median_household_income": 62449, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 119168.64744684048, "median_rent": 1124.351851851852, "rent_growth_pct": 7.86, "price_growth_pct": 8.33, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 8.83, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "IL", "landlord_friendliness_score": 5, "eviction_timeline_days": 35, "rent_control_status": "local_allowed", "monthly_rent_to_price_pct": 0.943, "acquisition_price": 119168.64744684048, "monthly_rent": 1124.351851851852, "loan_amount": 89376.49, "monthly_mortgage": 594.62, "annual_debt_service": 7135.44, "annual_noi": 7013.92, "cap_rate": 0.0589, "cash_on_cash_return": -0.0024, "dscr": 0.983, "break_even_occupancy": 0.929, "total_cash_per_property": 51242.52, "max_properties_200k": 3, "max_properties_500k": 9, "annual_cash_flow": -121.52, "annual_appreciation_used": 0.0833, "annual_rent_growth_used": 0.0786, "irr_5yr": 0.1214, "irr_7yr": 0.1484, "irr_10yr": 0.1625, "cagr_3yr": 0.073, "cagr_5yr": 0.0673, "cagr_10yr": 0.0561, "rent_growth_vs_national": 3.36, "migration_rate": 13.42, "migration_score": 10.9, "hhi_index": 1834.0, "diversification_score": 14.1, "comparable_markets": "['Weirton-Steubenville, WV-OH Metro Area', 'Salem, OH Micro Area', 'Meridian, MS Micro Area', 'Bluefield, WV-VA Micro Area']", "comp_avg_price": 133763.0, "comp_avg_rent": 962.0, "comp_avg_price_growth": -1.4, "score_cap_rate": 0.15, "score_cash_on_cash": 0.12, "score_irr_5yr": 0.13, "score_rent_to_price": 0.1, "score_dscr": 0.08, "score_landlord_friendliness": 0.0, "score_diversification": 0.011279999999999998, "score_migration": 0.00872, "score_price_growth": 0.08, "score_rent_growth": 0.01872, "composite_score": 69.87, "market_rank": 1}, {"cbsa_fips": "10180", "cbsa_title": "Abilene, TX Metro Area", "state_fips": "", "population": 178244, "population_growth_pct": null, "net_migration": 3813.0, "median_household_income": 66464, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 204420.12614349424, "median_rent": 1770.018538166814, "rent_growth_pct": 33.59, "price_growth_pct": 3.6, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 9.62, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "TX", "landlord_friendliness_score": 9, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.866, "acquisition_price": 204420.12614349424, "monthly_rent": 1770.018538166814, "loan_amount": 153315.09, "monthly_mortgage": 1020.01, "annual_debt_service": 12240.12, "annual_noi": 10755.81, "cap_rate": 0.0526, "cash_on_cash_return": -0.0169, "dscr": 0.879, "break_even_occupancy": 0.9899, "total_cash_per_property": 87900.65, "max_properties_200k": 2, "max_properties_500k": 5, "annual_cash_flow": -1484.31, "annual_appreciation_used": 0.036, "annual_rent_growth_used": 0.3359, "irr_5yr": 0.1114, "irr_7yr": 0.2053, "irr_10yr": 0.2959, "cagr_3yr": 0.0348, "cagr_5yr": 0.0342, "cagr_10yr": 0.0329, "rent_growth_vs_national": 29.09, "migration_rate": 21.39, "migration_score": 22.4, "hhi_index": 1834.0, "diversification_score": 14.1, "comparable_markets": "['Jackson, TN Metro Area', 'Waterloo-Cedar Falls, IA Metro Area', 'Jackson, MI Metro Area', 'Muskegon-Norton Shores, MI Metro Area']", "comp_avg_price": 212651.0, "comp_avg_rent": 1195.0, "comp_avg_price_growth": 2.47, "score_cap_rate": 0.10178999999999999, "score_cash_on_cash": 0.081672, "score_irr_5yr": 0.126178, "score_rent_to_price": 0.06831000000000001, "score_dscr": 0.05448000000000001, "score_landlord_friendliness": 0.1, "score_diversification": 0.011279999999999998, "score_migration": 0.017920000000000002, "score_price_growth": 0.052184, "score_rent_growth": 0.08, "composite_score": 69.38, "market_rank": 2}, {"cbsa_fips": "30020", "cbsa_title": "Lawton, OK Metro Area", "state_fips": "", "population": 127174, "population_growth_pct": null, "net_migration": 9611.0, "median_household_income": 59060, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 151593.57596847115, "median_rent": 1114.4325675675675, "rent_growth_pct": 3.31, "price_growth_pct": 4.3, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.34, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "OK", "landlord_friendliness_score": 8, "eviction_timeline_days": 16, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.735, "acquisition_price": 151593.57596847115, "monthly_rent": 1114.4325675675675, "loan_amount": 113695.18, "monthly_mortgage": 756.42, "annual_debt_service": 9077.04, "annual_noi": 6382.95, "cap_rate": 0.0421, "cash_on_cash_return": -0.0413, "dscr": 0.703, "break_even_occupancy": 1.1215, "total_cash_per_property": 65185.24, "max_properties_200k": 3, "max_properties_500k": 7, "annual_cash_flow": -2694.09, "annual_appreciation_used": 0.043, "annual_rent_growth_used": 0.0331, "irr_5yr": -0.02, "irr_7yr": 0.0193, "irr_10yr": 0.0465, "cagr_3yr": 0.0405, "cagr_5yr": 0.0391, "cagr_10yr": 0.0364, "rent_growth_vs_national": -1.19, "migration_rate": 75.57, "migration_score": 100.0, "hhi_index": 1940.1, "diversification_score": 0.0, "comparable_markets": "['Jamestown-Dunkirk, NY Micro Area', 'Altoona, PA Metro Area', 'Wheeling, WV-OH Metro Area', 'Muncie, IN Metro Area']", "comp_avg_price": 157351.0, "comp_avg_rent": 943.0, "comp_avg_price_growth": 4.44, "score_cap_rate": 0.021435, "score_cash_on_cash": 0.017183999999999998, "score_irr_5yr": 0.07597200000000001, "score_rent_to_price": 0.0144, "score_dscr": 0.011288000000000001, "score_landlord_friendliness": 0.07500000000000001, "score_diversification": 0.0, "score_migration": 0.08, "score_price_growth": 0.056304, "score_rent_growth": 0.00788, "composite_score": 35.95, "market_rank": 3}, {"cbsa_fips": "31300", "cbsa_title": "Lumberton, NC Micro Area", "state_fips": "", "population": 116858, "population_growth_pct": null, "net_migration": 1124.0, "median_household_income": 40318, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 128022.67410807968, "median_rent": 1045.8333333333333, "rent_growth_pct": 8.16, "price_growth_pct": -2.69, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 10.2, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "NC", "landlord_friendliness_score": 8, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.817, "acquisition_price": 128022.67410807968, "monthly_rent": 1045.8333333333333, "loan_amount": 96017.01, "monthly_mortgage": 638.8, "annual_debt_service": 7665.6, "annual_noi": 6232.11, "cap_rate": 0.0487, "cash_on_cash_return": -0.026, "dscr": 0.813, "break_even_occupancy": 1.0342, "total_cash_per_property": 55049.75, "max_properties_200k": 3, "max_properties_500k": 9, "annual_cash_flow": -1433.49, "annual_appreciation_used": -0.0269, "annual_rent_growth_used": 0.0816, "irr_5yr": -0.2188, "irr_7yr": -0.1438, "irr_10yr": -0.0531, "cagr_3yr": -0.0159, "cagr_5yr": -0.0098, "cagr_10yr": 0.0021, "rent_growth_vs_national": 3.66, "migration_rate": 9.62, "migration_score": 5.5, "hhi_index": 1940.1, "diversification_score": 0.0, "comparable_markets": "['Bluefield, WV-VA Micro Area', 'Weirton-Steubenville, WV-OH Metro Area', 'Opelousas, LA Micro Area', 'Meridian, MS Micro Area']", "comp_avg_price": 128284.0, "comp_avg_rent": 925.0, "comp_avg_price_growth": -3.83, "score_cap_rate": 0.07194, "score_cash_on_cash": 0.057624, "score_irr_5yr": 0.0, "score_rent_to_price": 0.04815, "score_dscr": 0.03828, "score_landlord_friendliness": 0.07500000000000001, "score_diversification": 0.0, "score_migration": 0.0044, "score_price_growth": 0.015208, "score_rent_growth": 0.019432, "composite_score": 33.0, "market_rank": 4}, {"cbsa_fips": "13140", "cbsa_title": "Beaumont-Port Arthur, TX Metro Area", "state_fips": "", "population": 396058, "population_growth_pct": null, "net_migration": 5026.0, "median_household_income": 65245, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 177552.82491372697, "median_rent": 1273.3564063185606, "rent_growth_pct": 5.29, "price_growth_pct": 1.82, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.62, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "TX", "landlord_friendliness_score": 9, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.717, "acquisition_price": 177552.82491372697, "monthly_rent": 1273.3564063185606, "loan_amount": 133164.62, "monthly_mortgage": 885.95, "annual_debt_service": 10631.4, "annual_noi": 7219.39, "cap_rate": 0.0407, "cash_on_cash_return": -0.0447, "dscr": 0.679, "break_even_occupancy": 1.1433, "total_cash_per_property": 76347.71, "max_properties_200k": 2, "max_properties_500k": 6, "annual_cash_flow": -3412.01, "annual_appreciation_used": 0.0182, "annual_rent_growth_used": 0.0529, "irr_5yr": -0.0878, "irr_7yr": -0.0377, "irr_10yr": 0.0038, "cagr_3yr": 0.0205, "cagr_5yr": 0.0217, "cagr_10yr": 0.0242, "rent_growth_vs_national": 0.79, "migration_rate": 12.69, "migration_score": 9.9, "hhi_index": 1424.0, "diversification_score": 68.8, "comparable_markets": "['Flint, MI Metro Area', 'Canton-Massillon, OH Metro Area', 'Davenport-Moline-Rock Island, IA-IL Metro Area', 'Lafayette, LA Metro Area']", "comp_avg_price": 193504.0, "comp_avg_rent": 1093.0, "comp_avg_price_growth": 3.87, "score_cap_rate": 0.01071, "score_cash_on_cash": 0.008196, "score_irr_5yr": 0.050063, "score_rent_to_price": 0.007000000000000001, "score_dscr": 0.0054, "score_landlord_friendliness": 0.1, "score_diversification": 0.05504, "score_migration": 0.00792, "score_price_growth": 0.04168, "score_rent_growth": 0.0126, "composite_score": 29.86, "market_rank": 5}, {"cbsa_fips": "13020", "cbsa_title": "Bay City, MI Metro Area", "state_fips": "", "population": 103235, "population_growth_pct": null, "net_migration": 936.0, "median_household_income": 60523, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 175919.3063091431, "median_rent": 1276.6349206349205, "rent_growth_pct": 4.97, "price_growth_pct": 6.72, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.48, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "MI", "landlord_friendliness_score": 7, "eviction_timeline_days": 28, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.726, "acquisition_price": 175919.3063091431, "monthly_rent": 1276.6349206349205, "loan_amount": 131939.48, "monthly_mortgage": 877.8, "annual_debt_service": 10533.6, "annual_noi": 7273.52, "cap_rate": 0.0413, "cash_on_cash_return": -0.0431, "dscr": 0.691, "break_even_occupancy": 1.1328, "total_cash_per_property": 75645.3, "max_properties_200k": 2, "max_properties_500k": 6, "annual_cash_flow": -3260.08, "annual_appreciation_used": 0.0672, "annual_rent_growth_used": 0.0497, "irr_5yr": 0.0413, "irr_7yr": 0.0744, "irr_10yr": 0.0946, "cagr_3yr": 0.06, "cagr_5yr": 0.056, "cagr_10yr": 0.0482, "rent_growth_vs_national": 0.47, "migration_rate": 9.07, "migration_score": 4.7, "hhi_index": 1834.0, "diversification_score": 14.1, "comparable_markets": "['Lima, OH Metro Area', 'Sunbury, PA Micro Area', 'Salem, OH Micro Area', 'Talladega-Sylacauga, AL Micro Area']", "comp_avg_price": 168263.0, "comp_avg_rent": 1111.0, "comp_avg_price_growth": 3.22, "score_cap_rate": 0.015299999999999998, "score_cash_on_cash": 0.012419999999999999, "score_irr_5yr": 0.099398, "score_rent_to_price": 0.010700000000000001, "score_dscr": 0.008344, "score_landlord_friendliness": 0.05, "score_diversification": 0.011279999999999998, "score_migration": 0.00376, "score_price_growth": 0.070504, "score_rent_growth": 0.01184, "composite_score": 29.35, "market_rank": 6}, {"cbsa_fips": "27140", "cbsa_title": "Jackson, MS Metro Area", "state_fips": "", "population": 615908, "population_growth_pct": null, "net_migration": 9184.0, "median_household_income": 60489, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 208017.47637636185, "median_rent": 1478.904789976734, "rent_growth_pct": 3.79, "price_growth_pct": 1.88, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.72, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "MS", "landlord_friendliness_score": 8, "eviction_timeline_days": 14, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.711, "acquisition_price": 208017.47637636185, "monthly_rent": 1478.904789976734, "loan_amount": 156013.11, "monthly_mortgage": 1037.96, "annual_debt_service": 12455.52, "annual_noi": 8354.1, "cap_rate": 0.0402, "cash_on_cash_return": -0.0459, "dscr": 0.671, "break_even_occupancy": 1.1511, "total_cash_per_property": 89447.51, "max_properties_200k": 2, "max_properties_500k": 5, "annual_cash_flow": -4101.42, "annual_appreciation_used": 0.0188, "annual_rent_growth_used": 0.0379, "irr_5yr": -0.0927, "irr_7yr": -0.0449, "irr_10yr": -0.0063, "cagr_3yr": 0.021, "cagr_5yr": 0.0222, "cagr_10yr": 0.0245, "rent_growth_vs_national": -0.71, "migration_rate": 14.91, "migration_score": 13.1, "hhi_index": 1190.0, "diversification_score": 100.0, "comparable_markets": "['Toledo, OH Metro Area', 'Scranton--Wilkes-Barre, PA Metro Area', 'Wichita, KS Metro Area', 'Augusta-Richmond County, GA-SC Metro Area']", "comp_avg_price": 217808.0, "comp_avg_rent": 1265.0, "comp_avg_price_growth": 2.29, "score_cap_rate": 0.0068850000000000005, "score_cash_on_cash": 0.0050279999999999995, "score_irr_5yr": 0.048191, "score_rent_to_price": 0.00453, "score_dscr": 0.003432, "score_landlord_friendliness": 0.07500000000000001, "score_diversification": 0.08, "score_migration": 0.010480000000000001, "score_price_growth": 0.042104, "score_rent_growth": 0.009024, "composite_score": 28.47, "market_rank": 7}, {"cbsa_fips": "48660", "cbsa_title": "Wichita Falls, TX Metro Area", "state_fips": "", "population": 148978, "population_growth_pct": null, "net_migration": 6489.0, "median_household_income": 63618, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 169805.1367315443, "median_rent": 1258.1914091655472, "rent_growth_pct": 5.12, "price_growth_pct": -0.9, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.25, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "TX", "landlord_friendliness_score": 9, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.741, "acquisition_price": 169805.1367315443, "monthly_rent": 1258.1914091655472, "loan_amount": 127353.85, "monthly_mortgage": 847.29, "annual_debt_service": 10167.48, "annual_noi": 7229.17, "cap_rate": 0.0426, "cash_on_cash_return": -0.0402, "dscr": 0.711, "break_even_occupancy": 1.1146, "total_cash_per_property": 73016.21, "max_properties_200k": 2, "max_properties_500k": 6, "annual_cash_flow": -2938.31, "annual_appreciation_used": -0.009, "annual_rent_growth_used": 0.0512, "irr_5yr": -0.1805, "irr_7yr": -0.1229, "irr_10yr": -0.0651, "cagr_3yr": -0.0015, "cagr_5yr": 0.0027, "cagr_10yr": 0.0109, "rent_growth_vs_national": 0.62, "migration_rate": 43.56, "migration_score": 54.1, "hhi_index": 1834.0, "diversification_score": 14.1, "comparable_markets": "['Alexandria, LA Metro Area', 'Texarkana, TX-AR Metro Area', 'Albany, GA Metro Area', 'Tupelo, MS Micro Area']", "comp_avg_price": 170945.0, "comp_avg_rent": 1101.0, "comp_avg_price_growth": -0.54, "score_cap_rate": 0.025259999999999998, "score_cash_on_cash": 0.020087999999999998, "score_irr_5yr": 0.014638000000000002, "score_rent_to_price": 0.01687, "score_dscr": 0.013248, "score_landlord_friendliness": 0.1, "score_diversification": 0.011279999999999998, "score_migration": 0.043280000000000006, "score_price_growth": 0.025712000000000002, "score_rent_growth": 0.012192000000000001, "composite_score": 28.26, "market_rank": 8}, {"cbsa_fips": "26380", "cbsa_title": "Houma-Bayou Cane-Thibodaux, LA Metro Area", "state_fips": "", "population": 204032, "population_growth_pct": null, "net_migration": 1181.0, "median_household_income": 64269, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 175246.07907715943, "median_rent": 1317.272385620915, "rent_growth_pct": 4.0, "price_growth_pct": -5.24, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.09, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "LA", "landlord_friendliness_score": 7, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.752, "acquisition_price": 175246.07907715943, "monthly_rent": 1317.272385620915, "loan_amount": 131434.56, "monthly_mortgage": 874.44, "annual_debt_service": 10493.28, "annual_noi": 7611.69, "cap_rate": 0.0434, "cash_on_cash_return": -0.0382, "dscr": 0.725, "break_even_occupancy": 1.1023, "total_cash_per_property": 75355.81, "max_properties_200k": 2, "max_properties_500k": 6, "annual_cash_flow": -2881.59, "annual_appreciation_used": -0.0524, "annual_rent_growth_used": 0.04, "irr_5yr": null, "irr_7yr": null, "irr_10yr": null, "cagr_3yr": -0.0365, "cagr_5yr": -0.0277, "cagr_10yr": -0.0104, "rent_growth_vs_national": -0.5, "migration_rate": 5.79, "migration_score": 0.0, "hhi_index": 1424.0, "diversification_score": 68.8, "comparable_markets": "['Florence, SC Metro Area', 'Saginaw, MI Metro Area', 'Springfield, IL Metro Area', 'Joplin, MO-KS Metro Area']", "comp_avg_price": 190036.0, "comp_avg_rent": 1176.0, "comp_avg_price_growth": 4.84, "score_cap_rate": 0.03138, "score_cash_on_cash": 0.02538, "score_irr_5yr": 0.03941600000000001, "score_rent_to_price": 0.021400000000000002, "score_dscr": 0.016688, "score_landlord_friendliness": 0.05, "score_diversification": 0.05504, "score_migration": 0.0, "score_price_growth": 0.000168, "score_rent_growth": 0.009528, "composite_score": 24.9, "market_rank": 9}, {"cbsa_fips": "24140", "cbsa_title": "Goldsboro, NC Metro Area", "state_fips": "", "population": 117606, "population_growth_pct": null, "net_migration": 3549.0, "median_household_income": 58082, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 181277.7261931234, "median_rent": 1389.2728758169935, "rent_growth_pct": -0.0, "price_growth_pct": -1.59, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 10.87, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "NC", "landlord_friendliness_score": 8, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.766, "acquisition_price": 181277.7261931234, "monthly_rent": 1389.2728758169935, "loan_amount": 135958.29, "monthly_mortgage": 904.53, "annual_debt_service": 10854.36, "annual_noi": 8088.03, "cap_rate": 0.0446, "cash_on_cash_return": -0.0355, "dscr": 0.745, "break_even_occupancy": 1.0859, "total_cash_per_property": 77949.42, "max_properties_200k": 2, "max_properties_500k": 6, "annual_cash_flow": -2766.33, "annual_appreciation_used": -0.0159, "annual_rent_growth_used": 0.03, "irr_5yr": -0.2161, "irr_7yr": -0.1649, "irr_10yr": -0.1121, "cagr_3yr": -0.0071, "cagr_5yr": -0.0021, "cagr_10yr": 0.0075, "rent_growth_vs_national": -4.5, "migration_rate": 30.18, "migration_score": 34.9, "hhi_index": 1940.1, "diversification_score": 0.0, "comparable_markets": "['Mansfield, OH Metro Area', 'Anniston-Oxford, AL Metro Area', 'Altoona, PA Metro Area', 'Muncie, IN Metro Area']", "comp_avg_price": 171679.0, "comp_avg_rent": 939.0, "comp_avg_price_growth": 5.7, "score_cap_rate": 0.04055999999999999, "score_cash_on_cash": 0.032507999999999995, "score_irr_5yr": 0.0010270000000000001, "score_rent_to_price": 0.027160000000000004, "score_dscr": 0.021591999999999997, "score_landlord_friendliness": 0.07500000000000001, "score_diversification": 0.0, "score_migration": 0.02792, "score_price_growth": 0.02168, "score_rent_growth": 0.0, "composite_score": 24.74, "market_rank": 10}, {"cbsa_fips": "39060", "cbsa_title": "Pottsville, PA Micro Area", "state_fips": "", "population": 143259, "population_growth_pct": null, "net_migration": 1363.0, "median_household_income": 66901, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 156568.86911264792, "median_rent": 1159.2301587301588, "rent_growth_pct": 4.24, "price_growth_pct": 3.23, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.26, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "PA", "landlord_friendliness_score": 6, "eviction_timeline_days": 30, "rent_control_status": "local_allowed", "monthly_rent_to_price_pct": 0.74, "acquisition_price": 156568.86911264792, "monthly_rent": 1159.2301587301588, "loan_amount": 117426.65, "monthly_mortgage": 781.24, "annual_debt_service": 9374.88, "annual_noi": 6658.54, "cap_rate": 0.0425, "cash_on_cash_return": -0.0403, "dscr": 0.71, "break_even_occupancy": 1.1153, "total_cash_per_property": 67324.61, "max_properties_200k": 2, "max_properties_500k": 7, "annual_cash_flow": -2716.34, "annual_appreciation_used": 0.0323, "annual_rent_growth_used": 0.0424, "irr_5yr": -0.0448, "irr_7yr": -0.0012, "irr_10yr": 0.0315, "cagr_3yr": 0.0319, "cagr_5yr": 0.0316, "cagr_10yr": 0.0311, "rent_growth_vs_national": -0.26, "migration_rate": 9.51, "migration_score": 5.3, "hhi_index": 1834.0, "diversification_score": 14.1, "comparable_markets": "['Albany, GA Metro Area', 'Alexandria, LA Metro Area', 'Wheeling, WV-OH Metro Area', 'Tupelo, MS Micro Area']", "comp_avg_price": 159754.0, "comp_avg_rent": 1040.0, "comp_avg_price_growth": 0.77, "score_cap_rate": 0.024495, "score_cash_on_cash": 0.019824, "score_irr_5yr": 0.066495, "score_rent_to_price": 0.01646, "score_dscr": 0.013008, "score_landlord_friendliness": 0.025, "score_diversification": 0.011279999999999998, "score_migration": 0.00424, "score_price_growth": 0.05, "score_rent_growth": 0.010096, "composite_score": 24.09, "market_rank": 11}, {"cbsa_fips": "43340", "cbsa_title": "Shreveport-Bossier City, LA Metro Area", "state_fips": "", "population": 389004, "population_growth_pct": null, "net_migration": 8531.0, "median_household_income": 54635, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 174207.39844116246, "median_rent": 1300.667992808275, "rent_growth_pct": 3.28, "price_growth_pct": -1.53, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.16, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "LA", "landlord_friendliness_score": 7, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.747, "acquisition_price": 174207.39844116246, "monthly_rent": 1300.667992808275, "loan_amount": 130655.55, "monthly_mortgage": 869.25, "annual_debt_service": 10431.0, "annual_noi": 7495.84, "cap_rate": 0.043, "cash_on_cash_return": -0.0392, "dscr": 0.719, "break_even_occupancy": 1.1081, "total_cash_per_property": 74909.18, "max_properties_200k": 2, "max_properties_500k": 6, "annual_cash_flow": -2935.16, "annual_appreciation_used": -0.0153, "annual_rent_growth_used": 0.0328, "irr_5yr": -0.2177, "irr_7yr": -0.1659, "irr_10yr": -0.112, "cagr_3yr": -0.0066, "cagr_5yr": -0.0017, "cagr_10yr": 0.0078, "rent_growth_vs_national": -1.22, "migration_rate": 21.93, "migration_score": 23.1, "hhi_index": 1424.0, "diversification_score": 68.8, "comparable_markets": "['Youngstown-Warren, OH Metro Area', 'Huntington-Ashland, WV-KY-OH Metro Area', 'Flint, MI Metro Area', 'Mobile, AL Metro Area']", "comp_avg_price": 175256.0, "comp_avg_rent": 1101.0, "comp_avg_price_growth": 2.78, "score_cap_rate": 0.028319999999999998, "score_cash_on_cash": 0.022728, "score_irr_5yr": 0.00041600000000000003, "score_rent_to_price": 0.01934, "score_dscr": 0.015216, "score_landlord_friendliness": 0.05, "score_diversification": 0.05504, "score_migration": 0.01848, "score_price_growth": 0.022016, "score_rent_growth": 0.007808000000000001, "composite_score": 23.94, "market_rank": 12}, {"cbsa_fips": "15180", "cbsa_title": "Brownsville-Harlingen, TX Metro Area", "state_fips": "", "population": 423192, "population_growth_pct": null, "net_migration": 2984.0, "median_household_income": 51334, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 203175.412225448, "median_rent": 1423.890852949724, "rent_growth_pct": 2.29, "price_growth_pct": 0.96, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.89, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "TX", "landlord_friendliness_score": 9, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.701, "acquisition_price": 203175.412225448, "monthly_rent": 1423.890852949724, "loan_amount": 152381.56, "monthly_mortgage": 1013.8, "annual_debt_service": 12165.6, "annual_noi": 7994.1, "cap_rate": 0.0393, "cash_on_cash_return": -0.0477, "dscr": 0.657, "break_even_occupancy": 1.1641, "total_cash_per_property": 87365.43, "max_properties_200k": 2, "max_properties_500k": 5, "annual_cash_flow": -4171.5, "annual_appreciation_used": 0.0096, "annual_rent_growth_used": 0.0229, "irr_5yr": -0.1314, "irr_7yr": -0.0834, "irr_10yr": -0.0433, "cagr_3yr": 0.0135, "cagr_5yr": 0.0157, "cagr_10yr": 0.02, "rent_growth_vs_national": -2.21, "migration_rate": 7.05, "migration_score": 1.8, "hhi_index": 1424.0, "diversification_score": 68.8, "comparable_markets": "['Mobile, AL Metro Area', 'Lafayette, LA Metro Area', 'Youngstown-Warren, OH Metro Area', 'Gulfport-Biloxi, MS Metro Area']", "comp_avg_price": 192563.0, "comp_avg_rent": 1267.0, "comp_avg_price_growth": 1.02, "score_cap_rate": 0.0, "score_cash_on_cash": 0.000264, "score_irr_5yr": 0.033397, "score_rent_to_price": 0.00041000000000000005, "score_dscr": 0.0, "score_landlord_friendliness": 0.1, "score_diversification": 0.05504, "score_migration": 0.0014399999999999999, "score_price_growth": 0.03664, "score_rent_growth": 0.005456, "composite_score": 23.26, "market_rank": 13}, {"cbsa_fips": "37140", "cbsa_title": "Paducah, KY-IL Metro Area", "state_fips": "", "population": 102924, "population_growth_pct": null, "net_migration": 2045.0, "median_household_income": 62286, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 170361.68639410273, "median_rent": 1216.6666666666667, "rent_growth_pct": 9.23, "price_growth_pct": 0.98, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.67, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "KY", "landlord_friendliness_score": 7, "eviction_timeline_days": 25, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.714, "acquisition_price": 170361.68639410273, "monthly_rent": 1216.6666666666667, "loan_amount": 127771.26, "monthly_mortgage": 850.07, "annual_debt_service": 10200.84, "annual_noi": 6885.85, "cap_rate": 0.0404, "cash_on_cash_return": -0.0453, "dscr": 0.675, "break_even_occupancy": 1.1471, "total_cash_per_property": 73255.53, "max_properties_200k": 2, "max_properties_500k": 6, "annual_cash_flow": -3314.99, "annual_appreciation_used": 0.0098, "annual_rent_growth_used": 0.0923, "irr_5yr": -0.0999, "irr_7yr": -0.0396, "irr_10yr": 0.0159, "cagr_3yr": 0.0137, "cagr_5yr": 0.0159, "cagr_10yr": 0.0201, "rent_growth_vs_national": 4.73, "migration_rate": 19.87, "migration_score": 20.2, "hhi_index": 1834.0, "diversification_score": 14.1, "comparable_markets": "['Lima, OH Metro Area', 'Sunbury, PA Micro Area', 'Salem, OH Micro Area', 'Corning, NY Micro Area']", "comp_avg_price": 164891.0, "comp_avg_rent": 1110.0, "comp_avg_price_growth": 3.6, "score_cap_rate": 0.008414999999999999, "score_cash_on_cash": 0.006612, "score_irr_5yr": 0.045434999999999996, "score_rent_to_price": 0.00576, "score_dscr": 0.004416, "score_landlord_friendliness": 0.05, "score_diversification": 0.011279999999999998, "score_migration": 0.01616, "score_price_growth": 0.036808, "score_rent_growth": 0.021984, "composite_score": 20.69, "market_rank": 14}, {"cbsa_fips": "13220", "cbsa_title": "Beckley, WV Metro Area", "state_fips": "", "population": 113653, "population_growth_pct": null, "net_migration": 1441.0, "median_household_income": 52345, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 142153.7490616855, "median_rent": 1054.2222222222222, "rent_growth_pct": 7.55, "price_growth_pct": -5.27, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.24, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "WV", "landlord_friendliness_score": 7, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.742, "acquisition_price": 142153.7490616855, "monthly_rent": 1054.2222222222222, "loan_amount": 106615.31, "monthly_mortgage": 709.31, "annual_debt_service": 8511.72, "annual_noi": 6059.33, "cap_rate": 0.0426, "cash_on_cash_return": -0.0401, "dscr": 0.712, "break_even_occupancy": 1.1139, "total_cash_per_property": 61126.11, "max_properties_200k": 3, "max_properties_500k": 8, "annual_cash_flow": -2452.39, "annual_appreciation_used": -0.0527, "annual_rent_growth_used": 0.0755, "irr_5yr": null, "irr_7yr": null, "irr_10yr": null, "cagr_3yr": -0.0368, "cagr_5yr": -0.0279, "cagr_10yr": -0.0105, "rent_growth_vs_national": 3.05, "migration_rate": 12.68, "migration_score": 9.9, "hhi_index": 1834.0, "diversification_score": 14.1, "comparable_markets": "['Weirton-Steubenville, WV-OH Metro Area', 'Muncie, IN Metro Area', 'Anniston-Oxford, AL Metro Area', 'Bluefield, WV-VA Micro Area']", "comp_avg_price": 148283.0, "comp_avg_rent": 904.0, "comp_avg_price_growth": 1.41, "score_cap_rate": 0.025259999999999998, "score_cash_on_cash": 0.020352, "score_irr_5yr": 0.03941600000000001, "score_rent_to_price": 0.01728, "score_dscr": 0.013496, "score_landlord_friendliness": 0.05, "score_diversification": 0.011279999999999998, "score_migration": 0.00792, "score_price_growth": 0.0, "score_rent_growth": 0.017984, "composite_score": 20.3, "market_rank": 15}, {"cbsa_fips": "16620", "cbsa_title": "Charleston, WV Metro Area", "state_fips": "", "population": 207456, "population_growth_pct": null, "net_migration": 2865.0, "median_household_income": 58089, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 142363.00996502707, "median_rent": 1030.9276018099547, "rent_growth_pct": 6.46, "price_growth_pct": -1.68, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.51, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "WV", "landlord_friendliness_score": 7, "eviction_timeline_days": 21, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.724, "acquisition_price": 142363.00996502707, "monthly_rent": 1030.9276018099547, "loan_amount": 106772.26, "monthly_mortgage": 710.36, "annual_debt_service": 8524.32, "annual_noi": 5868.49, "cap_rate": 0.0412, "cash_on_cash_return": -0.0434, "dscr": 0.688, "break_even_occupancy": 1.1347, "total_cash_per_property": 61216.09, "max_properties_200k": 3, "max_properties_500k": 8, "annual_cash_flow": -2655.83, "annual_appreciation_used": -0.0168, "annual_rent_growth_used": 0.0646, "irr_5yr": -0.2137, "irr_7yr": -0.151, "irr_10yr": -0.0811, "cagr_3yr": -0.0078, "cagr_5yr": -0.0028, "cagr_10yr": 0.0071, "rent_growth_vs_national": 1.96, "migration_rate": 13.81, "migration_score": 11.5, "hhi_index": 1424.0, "diversification_score": 68.8, "comparable_markets": "['Saginaw, MI Metro Area', 'Monroe, LA Metro Area', 'Terre Haute, IN Metro Area', 'Florence, SC Metro Area']", "comp_avg_price": 167039.0, "comp_avg_rent": 1093.0, "comp_avg_price_growth": 1.99, "score_cap_rate": 0.014535, "score_cash_on_cash": 0.011628, "score_irr_5yr": 0.00195, "score_rent_to_price": 0.00988, "score_dscr": 0.007608, "score_landlord_friendliness": 0.05, "score_diversification": 0.05504, "score_migration": 0.0092, "score_price_growth": 0.021096, "score_rent_growth": 0.015384, "composite_score": 19.63, "market_rank": 16}, {"cbsa_fips": "46220", "cbsa_title": "Tuscaloosa, AL Metro Area", "state_fips": "", "population": 275217, "population_growth_pct": null, "net_migration": 8556.0, "median_household_income": 59975, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 217284.08954538207, "median_rent": 1522.0591630591632, "rent_growth_pct": 4.31, "price_growth_pct": -0.82, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.9, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "AL", "landlord_friendliness_score": 8, "eviction_timeline_days": 14, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.7, "acquisition_price": 217284.08954538207, "monthly_rent": 1522.0591630591632, "loan_amount": 162963.07, "monthly_mortgage": 1084.2, "annual_debt_service": 13010.4, "annual_noi": 8543.53, "cap_rate": 0.0393, "cash_on_cash_return": -0.0478, "dscr": 0.657, "break_even_occupancy": 1.1646, "total_cash_per_property": 93432.16, "max_properties_200k": 2, "max_properties_500k": 5, "annual_cash_flow": -4466.87, "annual_appreciation_used": -0.0082, "annual_rent_growth_used": 0.0431, "irr_5yr": -0.1931, "irr_7yr": -0.1384, "irr_10yr": -0.0839, "cagr_3yr": -0.0008, "cagr_5yr": 0.0033, "cagr_10yr": 0.0113, "rent_growth_vs_national": -0.19, "migration_rate": 31.09, "migration_score": 36.3, "hhi_index": 1513.8, "diversification_score": 56.8, "comparable_markets": "['Erie, PA Metro Area', 'Laredo, TX Metro Area', 'Evansville, IN Metro Area', 'Amarillo, TX Metro Area']", "comp_avg_price": 213682.0, "comp_avg_rent": 1165.0, "comp_avg_price_growth": 3.28, "score_cap_rate": 0.0, "score_cash_on_cash": 0.0, "score_irr_5yr": 0.009815, "score_rent_to_price": 0.0, "score_dscr": 0.0, "score_landlord_friendliness": 0.07500000000000001, "score_diversification": 0.045439999999999994, "score_migration": 0.02904, "score_price_growth": 0.026216, "score_rent_growth": 0.010264, "composite_score": 19.58, "market_rank": 17}, {"cbsa_fips": "19260", "cbsa_title": "Danville, VA Micro Area", "state_fips": "", "population": 102387, "population_growth_pct": null, "net_migration": 2313.0, "median_household_income": 48994, "total_employment": null, "job_growth_pct": null, "unemployment_rate": null, "mortgage_rate_30yr": 6.46, "cpi_yoy_pct": 2.43, "gdp_growth_pct": 0.7, "median_home_price": 159692.39775558028, "median_rent": 1146.3333333333333, "rent_growth_pct": 8.2, "price_growth_pct": -1.38, "days_on_market": null, "inventory": null, "price_to_rent_ratio": 11.61, "fed_funds_rate": 3.64, "national_unemployment": 4.3, "state_abbrev": "VA", "landlord_friendliness_score": 7, "eviction_timeline_days": 30, "rent_control_status": "preempted", "monthly_rent_to_price_pct": 0.718, "acquisition_price": 159692.39775558028, "monthly_rent": 1146.3333333333333, "loan_amount": 119769.3, "monthly_mortgage": 796.83, "annual_debt_service": 9561.96, "annual_noi": 6501.75, "cap_rate": 0.0407, "cash_on_cash_return": -0.0446, "dscr": 0.68, "break_even_occupancy": 1.1425, "total_cash_per_property": 68667.73, "max_properties_200k": 2, "max_properties_500k": 7, "annual_cash_flow": -3060.21, "annual_appreciation_used": -0.0138, "annual_rent_growth_used": 0.082, "irr_5yr": -0.1919, "irr_7yr": -0.124, "irr_10yr": -0.0501, "cagr_3yr": -0.0054, "cagr_5yr": -0.0007, "cagr_10yr": 0.0085, "rent_growth_vs_national": 3.7, "migration_rate": 22.59, "migration_score": 24.1, "hhi_index": 1940.1, "diversification_score": 0.0, "comparable_markets": "['Greenwood, SC Micro Area', 'Bluefield, WV-VA Micro Area', 'Salem, OH Micro Area', 'Muncie, IN Metro Area']", "comp_avg_price": 155445.0, "comp_avg_rent": 996.0, "comp_avg_price_growth": -0.91, "score_cap_rate": 0.01071, "score_cash_on_cash": 0.008459999999999999, "score_irr_5yr": 0.010283, "score_rent_to_price": 0.00741, "score_dscr": 0.005647999999999999, "score_landlord_friendliness": 0.05, "score_diversification": 0.0, "score_migration": 0.01928, "score_price_growth": 0.022856, "score_rent_growth": 0.019528, "composite_score": 15.42, "market_rank": 18}];
+const DATA_STRATEGIES = [{"strategy": "concentrated", "name": "concentrated", "description": "All capital in Decatur, IL Metro Area", "markets": "['Decatur, IL Metro Area']", "allocations": "{'Decatur, IL Metro Area': 350000.0}", "n_properties": "{'Decatur, IL Metro Area': 6}", "total_properties": 6, "annual_cash_flow": -729.0, "annual_noi": 42084.0, "portfolio_cap_rate": 0.0589, "portfolio_irr_5yr": 0.1214, "diversification_ratio": 0.0, "concentration_risk": 1.0, "portfolio_variance": 0.046916, "portfolio_volatility": 0.2166, "portfolio_return": 0.1422, "concentration_hhi": 10000.0, "diversification_benefit": 0.0, "sharpe_ratio": 0.458, "max_drawdown_estimate": 0.4332}, {"strategy": "diversified", "name": "diversified", "description": "Equal allocation across 4 markets", "markets": "['Decatur, IL Metro Area', 'Abilene, TX Metro Area', 'Lawton, OK Metro Area', 'Lumberton, NC Micro Area']", "allocations": "{'Decatur, IL Metro Area': 87500.0, 'Abilene, TX Metro Area': 87500.0, 'Lawton, OK Metro Area': 87500.0, 'Lumberton, NC Micro Area': 87500.0}", "n_properties": "{'Decatur, IL Metro Area': 1, 'Abilene, TX Metro Area': 1, 'Lawton, OK Metro Area': 1, 'Lumberton, NC Micro Area': 1}", "total_properties": 4, "annual_cash_flow": -5733.0, "annual_noi": 30385.0, "portfolio_cap_rate": 0.0868, "portfolio_irr_5yr": -0.0015, "diversification_ratio": 0.542, "concentration_risk": 0.25, "portfolio_variance": 0.01287, "portfolio_volatility": 0.1134, "portfolio_return": 0.0844, "concentration_hhi": 2500.0, "diversification_benefit": 0.2154, "sharpe_ratio": 0.365, "max_drawdown_estimate": 0.2269}, {"strategy": "hybrid", "name": "hybrid", "description": "60% Decatur, IL Metro Area, 20% each in 2 satellites", "markets": "['Decatur, IL Metro Area', 'Abilene, TX Metro Area', 'Lawton, OK Metro Area']", "allocations": "{'Decatur, IL Metro Area': 210000.0, 'Abilene, TX Metro Area': 70000.0, 'Lawton, OK Metro Area': 70000.0}", "n_properties": "{'Decatur, IL Metro Area': 4, 'Abilene, TX Metro Area': 1, 'Lawton, OK Metro Area': 1}", "total_properties": 6, "annual_cash_flow": -4664.0, "annual_noi": 45194.0, "portfolio_cap_rate": 0.1291, "portfolio_irr_5yr": 0.0911, "diversification_ratio": 0.516, "concentration_risk": 0.6, "portfolio_variance": 0.025517, "portfolio_volatility": 0.1597, "portfolio_return": 0.1201, "concentration_hhi": 4400.0, "diversification_benefit": 0.1202, "sharpe_ratio": 0.482, "max_drawdown_estimate": 0.3195}];
+const DATA_CAPITAL = [{"capital": 200000, "recommended_strategy": "concentrated", "total_properties": 3, "annual_cash_flow": -365.0, "portfolio_irr_5yr": 0.1214, "diversification_ratio": 0.0, "n_markets": 1}, {"capital": 250000, "recommended_strategy": "concentrated", "total_properties": 4, "annual_cash_flow": -486.0, "portfolio_irr_5yr": 0.1214, "diversification_ratio": 0.0, "n_markets": 1}, {"capital": 300000, "recommended_strategy": "concentrated", "total_properties": 5, "annual_cash_flow": -608.0, "portfolio_irr_5yr": 0.1214, "diversification_ratio": 0.0, "n_markets": 1}, {"capital": 350000, "recommended_strategy": "concentrated", "total_properties": 6, "annual_cash_flow": -729.0, "portfolio_irr_5yr": 0.1214, "diversification_ratio": 0.0, "n_markets": 1}, {"capital": 400000, "recommended_strategy": "concentrated", "total_properties": 7, "annual_cash_flow": -851.0, "portfolio_irr_5yr": 0.1214, "diversification_ratio": 0.0, "n_markets": 1}, {"capital": 450000, "recommended_strategy": "concentrated", "total_properties": 8, "annual_cash_flow": -972.0, "portfolio_irr_5yr": 0.1214, "diversification_ratio": 0.0, "n_markets": 1}, {"capital": 500000, "recommended_strategy": "concentrated", "total_properties": 9, "annual_cash_flow": -1094.0, "portfolio_irr_5yr": 0.1214, "diversification_ratio": 0.0, "n_markets": 1}];
+const DATA_CORR = {"labels": ["Decatur, IL Metro Area", "Abilene, TX Metro Area", "Lawton, OK Metro Area", "Lumberton, NC Micro Area", "Beaumont-Port Arthur, TX Metro Area", "Bay City, MI Metro Area", "Jackson, MS Metro Area", "Wichita Falls, TX Metro Area", "Houma-Bayou Cane-Thibodaux, LA Metro Area", "Goldsboro, NC Metro Area", "Pottsville, PA Micro Area", "Shreveport-Bossier City, LA Metro Area", "Brownsville-Harlingen, TX Metro Area", "Paducah, KY-IL Metro Area", "Beckley, WV Metro Area", "Charleston, WV Metro Area", "Tuscaloosa, AL Metro Area", "Danville, VA Micro Area"], "values": [[1.0, 0.407, 0.579, 0.482, 0.459, 0.597, 0.391, 0.517, 0.444, 0.48, 0.554, 0.405, 0.367, 0.567, 0.498, 0.512, 0.409, 0.503], [0.407, 1.0, 0.465, 0.314, 0.641, 0.472, 0.464, 0.641, 0.462, 0.44, 0.517, 0.404, 0.587, 0.493, 0.359, 0.433, 0.482, 0.395], [0.579, 0.465, 1.0, 0.502, 0.535, 0.622, 0.496, 0.594, 0.529, 0.59, 0.638, 0.526, 0.489, 0.598, 0.551, 0.588, 0.515, 0.563], [0.482, 0.314, 0.502, 1.0, 0.395, 0.447, 0.344, 0.501, 0.459, 0.665, 0.465, 0.471, 0.419, 0.504, 0.602, 0.549, 0.415, 0.602], [0.459, 0.641, 0.535, 0.395, 1.0, 0.542, 0.606, 0.743, 0.582, 0.533, 0.583, 0.61, 0.733, 0.566, 0.444, 0.546, 0.576, 0.476], [0.597, 0.472, 0.622, 0.447, 0.542, 1.0, 0.494, 0.586, 0.528, 0.583, 0.592, 0.504, 0.47, 0.619, 0.5, 0.522, 0.512, 0.545], [0.391, 0.464, 0.496, 0.344, 0.606, 0.494, 1.0, 0.515, 0.505, 0.502, 0.497, 0.57, 0.614, 0.499, 0.393, 0.495, 0.607, 0.424], [0.517, 0.641, 0.594, 0.501, 0.743, 0.586, 0.515, 1.0, 0.627, 0.621, 0.627, 0.578, 0.657, 0.637, 0.55, 0.608, 0.581, 0.581], [0.444, 0.462, 0.529, 0.459, 0.582, 0.528, 0.505, 0.627, 1.0, 0.581, 0.566, 0.727, 0.498, 0.566, 0.554, 0.591, 0.569, 0.517], [0.48, 0.44, 0.59, 0.665, 0.533, 0.583, 0.502, 0.621, 0.581, 1.0, 0.559, 0.584, 0.526, 0.603, 0.565, 0.591, 0.568, 0.592], [0.554, 0.517, 0.638, 0.465, 0.583, 0.592, 0.497, 0.627, 0.566, 0.559, 1.0, 0.511, 0.473, 0.603, 0.514, 0.567, 0.515, 0.538], [0.405, 0.404, 0.526, 0.471, 0.61, 0.504, 0.57, 0.578, 0.727, 0.584, 0.511, 1.0, 0.619, 0.528, 0.52, 0.591, 0.59, 0.549], [0.367, 0.587, 0.489, 0.419, 0.733, 0.47, 0.614, 0.657, 0.498, 0.526, 0.473, 0.619, 1.0, 0.491, 0.459, 0.509, 0.592, 0.5], [0.567, 0.493, 0.598, 0.504, 0.566, 0.619, 0.499, 0.637, 0.566, 0.603, 0.603, 0.528, 0.491, 1.0, 0.553, 0.567, 0.533, 0.602], [0.498, 0.359, 0.551, 0.602, 0.444, 0.5, 0.393, 0.55, 0.554, 0.565, 0.514, 0.52, 0.459, 0.553, 1.0, 0.748, 0.464, 0.62], [0.512, 0.433, 0.588, 0.549, 0.546, 0.522, 0.495, 0.608, 0.591, 0.591, 0.567, 0.591, 0.509, 0.567, 0.748, 1.0, 0.566, 0.582], [0.409, 0.482, 0.515, 0.415, 0.576, 0.512, 0.607, 0.581, 0.569, 0.568, 0.515, 0.59, 0.592, 0.533, 0.464, 0.566, 1.0, 0.495], [0.503, 0.395, 0.563, 0.602, 0.476, 0.545, 0.424, 0.581, 0.517, 0.592, 0.538, 0.549, 0.5, 0.602, 0.62, 0.582, 0.495, 1.0]]};
+const DATA_MEMO = "# Vero Capital Holdings \u2014 Investment Memo\n\n**Date:** April 04, 2026\n**Prepared by:** Vero Capital Holdings Analytical Engine\n**Capital Budget:** $350,000\n**Markets Analyzed:** 18\n**Recommended Strategy:** Diversified\n\n---\n\n## 1. Executive Summary\n\n### Strategy Recommendation: **Diversified**\n\nDiversified strategy recommended: spreading capital across multiple markets provides meaningful diversification benefit with comparable returns.\n\n**Key Metrics:**\n- **Capital Deployed:** $350,000\n- **Total Properties:** 4\n- **Annual Cash Flow:** $-5,733\n- **Projected 5-Year IRR:** -0.1%\n- **Markets:** Decatur, IL Metro Area, Abilene, TX Metro Area, Lawton, OK Metro Area, Lumberton, NC Micro Area\n\n**Top-Ranked Markets:** Decatur, IL Metro Area, Abilene, TX Metro Area, Lawton, OK Metro Area\n\nThe analysis evaluated 18 US metropolitan areas that passed rigorous screening on population, affordability, cash flow viability, employment strength, and landlord-friendliness. Each market was modeled with full financial projections including cap rate, cash-on-cash return, DSCR, and multi-horizon IRR.\n\n## 2. Optimal Capital Allocation\n\n| Market | Allocation | Properties | Weight |\n|--------|-----------|-----------|--------|\n| Decatur, IL Metro Area | $87,500 | 1 | 25% |\n| Abilene, TX Metro Area | $87,500 | 1 | 25% |\n| Lawton, OK Metro Area | $87,500 | 1 | 25% |\n| Lumberton, NC Micro Area | $87,500 | 1 | 25% |\n| **Cash Reserve** | **$0** | \u2014 | 0% |\n| **Total** | **$350,000** | **4** | **100%** |\n\n## 3. Market Profiles\n\n### #1: Decatur, IL Metro Area\n- **Composite Score:** 69.9/100\n- **Population:** 102,591 | **State:** IL\n- **Median Home Price:** $119,169 | **Median Rent:** $1,124/mo\n- **Cap Rate:** 5.9% | **Cash-on-Cash:** -0.2% | **DSCR:** 0.98x\n- **5-Year IRR:** 12.1%\n- **Landlord-Friendliness:** 5/10 | Eviction: ~35 days | Rent Control: local_allowed\n\n### #2: Abilene, TX Metro Area\n- **Composite Score:** 69.4/100\n- **Population:** 178,244 | **State:** TX\n- **Median Home Price:** $204,420 | **Median Rent:** $1,770/mo\n- **Cap Rate:** 5.3% | **Cash-on-Cash:** -1.7% | **DSCR:** 0.88x\n- **5-Year IRR:** 11.1%\n- **Landlord-Friendliness:** 9/10 | Eviction: ~21 days | Rent Control: preempted\n\n### #3: Lawton, OK Metro Area\n- **Composite Score:** 36.0/100\n- **Population:** 127,174 | **State:** OK\n- **Median Home Price:** $151,594 | **Median Rent:** $1,114/mo\n- **Cap Rate:** 4.2% | **Cash-on-Cash:** -4.1% | **DSCR:** 0.70x\n- **5-Year IRR:** -2.0%\n- **Landlord-Friendliness:** 8/10 | Eviction: ~16 days | Rent Control: preempted\n\n### #4: Lumberton, NC Micro Area\n- **Composite Score:** 33.0/100\n- **Population:** 116,858 | **State:** NC\n- **Median Home Price:** $128,023 | **Median Rent:** $1,046/mo\n- **Cap Rate:** 4.9% | **Cash-on-Cash:** -2.6% | **DSCR:** 0.81x\n- **5-Year IRR:** -21.9%\n- **Landlord-Friendliness:** 8/10 | Eviction: ~21 days | Rent Control: preempted\n\n### #5: Beaumont-Port Arthur, TX Metro Area\n- **Composite Score:** 29.9/100\n- **Population:** 396,058 | **State:** TX\n- **Median Home Price:** $177,553 | **Median Rent:** $1,273/mo\n- **Cap Rate:** 4.1% | **Cash-on-Cash:** -4.5% | **DSCR:** 0.68x\n- **5-Year IRR:** -8.8%\n- **Landlord-Friendliness:** 9/10 | Eviction: ~21 days | Rent Control: preempted\n\n\n## 4. Financial Projections Across Hold Periods\n\n| Market | Cap Rate | CoC Return | DSCR | 5yr IRR | 7yr IRR | 10yr IRR |\n|--------|----------|-----------|------|---------|---------|----------|\n| Decatur, IL Metro Area | 5.9% | -0.2% | 0.98x | 12.1% | 14.8% | 16.2% |\n| Abilene, TX Metro Area | 5.3% | -1.7% | 0.88x | 11.1% | 20.5% | 29.6% |\n| Lawton, OK Metro Area | 4.2% | -4.1% | 0.70x | -2.0% | 1.9% | 4.7% |\n| Lumberton, NC Micro Area | 4.9% | -2.6% | 0.81x | -21.9% | -14.4% | -5.3% |\n| Beaumont-Port Arthur, TX Metro Area | 4.1% | -4.5% | 0.68x | -8.8% | -3.8% | 0.4% |\n| Bay City, MI Metro Area | 4.1% | -4.3% | 0.69x | 4.1% | 7.4% | 9.5% |\n| Jackson, MS Metro Area | 4.0% | -4.6% | 0.67x | -9.3% | -4.5% | -0.6% |\n| Wichita Falls, TX Metro Area | 4.3% | -4.0% | 0.71x | -18.1% | -12.3% | -6.5% |\n| Houma-Bayou Cane-Thibodaux, LA Metr | 4.3% | -3.8% | 0.72x | N/A | N/A | N/A |\n| Goldsboro, NC Metro Area | 4.5% | -3.5% | 0.74x | -21.6% | -16.5% | -11.2% |\n\n## 5. Correlation Analysis\n\nCross-market price correlation matrix (18 markets):\n- **Average pairwise correlation:** 0.534\n- **Interpretation:** Moderate correlation \u2014 limited diversification benefit\n\n**Best diversification pairs (lowest correlation):**\n- Abilene, TX Metro Area \u2194 Lumberton, NC Micro Area: 0.314\n- Lumberton, NC Micro Area \u2194 Jackson, MS Metro Area: 0.344\n- Abilene, TX Metro Area \u2194 Beckley, WV Metro Area: 0.359\n- Decatur, IL Metro Area \u2194 Brownsville-Harlingen, TX Metr: 0.367\n- Decatur, IL Metro Area \u2194 Jackson, MS Metro Area: 0.391\n\n## 6. Comparable Market Benchmarks\n\n**Decatur, IL Metro Area:**\n- Comparables: ['Weirton-Steubenville, WV-OH Metro Area', 'Salem, OH Micro Area', 'Meridian, MS Micro Area', 'Bluefield, WV-VA Micro Area']\n- Comp avg price: $133,763 vs $119,169 (this market)\n- Comp avg rent: $962 vs $1,124 (this market)\n- Comp avg price growth: -1.4% vs 8.3% (this market)\n\n**Abilene, TX Metro Area:**\n- Comparables: ['Jackson, TN Metro Area', 'Waterloo-Cedar Falls, IA Metro Area', 'Jackson, MI Metro Area', 'Muskegon-Norton Shores, MI Metro Area']\n- Comp avg price: $212,651 vs $204,420 (this market)\n- Comp avg rent: $1,195 vs $1,770 (this market)\n- Comp avg price growth: 2.5% vs 3.6% (this market)\n\n**Lawton, OK Metro Area:**\n- Comparables: ['Jamestown-Dunkirk, NY Micro Area', 'Altoona, PA Metro Area', 'Wheeling, WV-OH Metro Area', 'Muncie, IN Metro Area']\n- Comp avg price: $157,351 vs $151,594 (this market)\n- Comp avg rent: $943 vs $1,114 (this market)\n- Comp avg price growth: 4.4% vs 4.3% (this market)\n\n**Lumberton, NC Micro Area:**\n- Comparables: ['Bluefield, WV-VA Micro Area', 'Weirton-Steubenville, WV-OH Metro Area', 'Opelousas, LA Micro Area', 'Meridian, MS Micro Area']\n- Comp avg price: $128,284 vs $128,023 (this market)\n- Comp avg rent: $925 vs $1,046 (this market)\n- Comp avg price growth: -3.8% vs -2.7% (this market)\n\n**Beaumont-Port Arthur, TX Metro Area:**\n- Comparables: ['Flint, MI Metro Area', 'Canton-Massillon, OH Metro Area', 'Davenport-Moline-Rock Island, IA-IL Metro Area', 'Lafayette, LA Metro Area']\n- Comp avg price: $193,504 vs $177,553 (this market)\n- Comp avg rent: $1,093 vs $1,273 (this market)\n- Comp avg price growth: 3.9% vs 1.8% (this market)\n\n\n## 7. Risk Factors and Sensitivity\n\n### Strategy Risk Comparison\n\n| Strategy | Sharpe | Vol | Div Benefit | Conc HHI | Max DD Est |\n|----------|--------|-----|-------------|----------|-----------|\n| Concentrated | 0.46 | 21.7% | 0.0% | 10,000 | 43.3% |\n| Diversified | 0.36 | 11.3% | 21.5% | 2,500 | 22.7% |\n| Hybrid | 0.48 | 16.0% | 12.0% | 4,400 | 31.9% |\n\n### Key Risk Factors\n- **Interest rate risk:** Current 7%+ mortgage rates compress cash-on-cash returns\n- **Vacancy risk:** Smaller markets may have thinner tenant pools\n- **Liquidity risk:** Sub-$250K markets may have longer disposition timelines\n- **Concentration risk:** Single-market exposure to local economic shocks\n- **Regulatory risk:** State-level landlord-tenant law changes\n\n## 8. Capital Sensitivity Analysis\n\nHow the recommended strategy shifts from $200K to $500K:\n\n| Capital | Strategy | Properties | Markets | Annual CF | 5yr IRR |\n|---------|----------|-----------|---------|-----------|---------|\n| $200,000 | Concentrated | 3 | 1 | $-365 | 12.1% |\n| $250,000 | Concentrated | 4 | 1 | $-486 | 12.1% |\n| $300,000 | Concentrated | 5 | 1 | $-608 | 12.1% |\n| $350,000 | Concentrated | 6 | 1 | $-729 | 12.1% |\n| $400,000 | Concentrated | 7 | 1 | $-851 | 12.1% |\n| $450,000 | Concentrated | 8 | 1 | $-972 | 12.1% |\n| $500,000 | Concentrated | 9 | 1 | $-1,094 | 12.1% |\n\n## 9. Recommended Acquisition Timeline\n\n| Phase | Timeline | Action |\n|-------|----------|--------|\n| **Due Diligence** | Weeks 1-4 | On-ground market visits, property manager interviews, contractor bids |\n| **Primary Market** | Weeks 4-8 | Acquire first 2 properties in top-ranked market |\n| **Satellite Markets** | Weeks 8-16 | Acquire remaining 2 properties across 3 satellite markets |\n| **Stabilization** | Weeks 16-24 | Complete rehab, tenant placement, PM onboarding |\n| **Optimization** | Months 6-12 | Rent optimization, expense reduction, refinance evaluation |\n\n**Total deployment window:** 4-6 months for full capital deployment across 4 market(s).\n\n---\n\n*This memo was auto-generated by the Vero Capital Holdings analytical pipeline. Projections are based on publicly available data and standard financial assumptions. Actual returns will vary based on property-specific factors, market conditions, and execution. This is not financial advice \u2014 consult qualified professionals before making investment decisions.*";
+
+const PALETTE = ["#0D9488","#38BDF8","#A78BFA","#FB923C","#F472B6","#34D399","#FBBF24","#818CF8"];
+const PLOTLY_LAYOUT = {
+  paper_bgcolor:'transparent', plot_bgcolor:'transparent',
+  font:{color:'#F8FAFC',size:12},
+  margin:{t:40,b:50,l:60,r:20},
+  xaxis:{gridcolor:'#334155',zerolinecolor:'#334155'},
+  yaxis:{gridcolor:'#334155',zerolinecolor:'#334155'},
+};
+const PLOTLY_CFG = {displayModeBar:false,responsive:true};
+
+// ── Helpers ──
+function fmtDollar(v){ if(v==null||isNaN(v)) return '—'; return '$'+Number(v).toLocaleString('en-US',{minimumFractionDigits:0,maximumFractionDigits:0}) }
+function fmtPct(v){ if(v==null||isNaN(v)) return '—'; return (v*100).toFixed(1)+'%' }
+function fmtNum(v){ if(v==null||isNaN(v)) return '—'; return Number(v).toLocaleString('en-US') }
+function fmtPctRaw(v){ if(v==null||isNaN(v)) return '—'; return Number(v).toFixed(1)+'%' }
+function shortName(s){ if(!s) return '—'; return s.replace(/ Metro Area| Micro Area/g,'') }
+
+// ── Tab switching ──
+function showTab(id, btn){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  document.querySelectorAll('.sidebar nav button').forEach(b=>b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  if(id==='portfolio') renderPortfolio();
+  if(id==='deepdive') renderDeepDive();
+  window.dispatchEvent(new Event('resize'));
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB 1: Executive Summary
+// ══════════════════════════════════════════════════════════════════
+function renderSummary(){
+  const top = DATA_MARKETS[0];
+  const avgCap = DATA_MARKETS.reduce((s,m)=>s+(m.cap_rate||0),0)/DATA_MARKETS.length;
+  const avgIRR = DATA_MARKETS.reduce((s,m)=>s+(m.irr_5yr||0),0)/DATA_MARKETS.length;
+
+  document.getElementById('summary-cards').innerHTML = `
+    <div class="card"><div class="label">Top Ranked Market</div><div class="value" style="font-size:20px;color:var(--primary)">${shortName(top.cbsa_title)}</div><div class="sub">Score: ${(top.composite_score||0).toFixed(1)}</div></div>
+    <div class="card"><div class="label">Avg Cap Rate</div><div class="value">${fmtPct(avgCap)}</div><div class="sub">Across ${DATA_MARKETS.length} markets</div></div>
+    <div class="card"><div class="label">Avg 5-Year IRR</div><div class="value">${fmtPct(avgIRR)}</div><div class="sub">Projected</div></div>
+    <div class="card"><div class="label">Markets Analyzed</div><div class="value">${DATA_MARKETS.length}</div><div class="sub">Passed screening</div></div>
+  `;
+
+  // Strategy cards
+  let sh = '';
+  DATA_STRATEGIES.forEach((s,i)=>{
+    const col = PALETTE[i%PALETTE.length];
+    sh += `<div class="card strategy-card" style="border-top-color:${col}">
+      <div class="label">${s.strategy||s.name||'Strategy '+(i+1)}</div>
+      <div class="value">${s.total_properties||'—'} Properties</div>
+      <div class="sub">Cash Flow: ${fmtDollar(s.annual_cash_flow)} &middot; IRR: ${fmtPct(s.portfolio_irr_5yr)}</div>
+      <div class="sub">Sharpe: ${s.sharpe_ratio!=null?s.sharpe_ratio.toFixed(3):'—'} &middot; Diversification: ${s.diversification_ratio!=null?(s.diversification_ratio*100).toFixed(1)+'%':'—'}</div>
+    </div>`;
+  });
+  document.getElementById('strategy-cards').innerHTML = sh;
+
+  // Capital sensitivity chart
+  Plotly.newPlot('capital-chart', [
+    {x:DATA_CAPITAL.map(r=>r.capital), y:DATA_CAPITAL.map(r=>r.total_properties), name:'Properties', type:'scatter', mode:'lines+markers', marker:{color:PALETTE[0],size:8}, yaxis:'y'},
+    {x:DATA_CAPITAL.map(r=>r.capital), y:DATA_CAPITAL.map(r=>r.annual_cash_flow), name:'Annual Cash Flow', type:'scatter', mode:'lines+markers', marker:{color:PALETTE[1],size:8}, yaxis:'y2'},
+  ], {
+    ...PLOTLY_LAYOUT,
+    title:{text:'Capital Sensitivity Analysis',font:{size:15,color:'#F8FAFC'}},
+    xaxis:{...PLOTLY_LAYOUT.xaxis, title:'Capital ($)', tickformat:'$,.0f'},
+    yaxis:{...PLOTLY_LAYOUT.yaxis, title:'Properties', side:'left'},
+    yaxis2:{...PLOTLY_LAYOUT.yaxis, title:'Cash Flow ($)', overlaying:'y', side:'right', tickformat:'$,.0f'},
+    legend:{x:0.01,y:1.15,orientation:'h',font:{size:11}},
+  }, PLOTLY_CFG);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB 2: Market Rankings
+// ══════════════════════════════════════════════════════════════════
+const RANK_COLS = [
+  {key:'market_rank',label:'Rank',fmt:v=>v},
+  {key:'cbsa_title',label:'Market',fmt:shortName},
+  {key:'composite_score',label:'Score',fmt:v=>v!=null?v.toFixed(1):'—'},
+  {key:'cap_rate',label:'Cap Rate',fmt:fmtPct},
+  {key:'cash_on_cash_return',label:'Cash-on-Cash',fmt:fmtPct},
+  {key:'irr_5yr',label:'IRR 5yr',fmt:fmtPct},
+  {key:'dscr',label:'DSCR',fmt:v=>v!=null?v.toFixed(3):'—'},
+  {key:'median_home_price',label:'Price',fmt:fmtDollar},
+  {key:'median_rent',label:'Rent',fmt:fmtDollar},
+  {key:'population',label:'Population',fmt:fmtNum},
+  {key:'landlord_friendliness_score',label:'LL Score',fmt:v=>v!=null?v+'/10':'—'},
+];
+
+let rankSort = {col:'market_rank', asc:true};
+
+function renderRankings(){
+  let head = '';
+  RANK_COLS.forEach(c=>{
+    const arrow = rankSort.col===c.key ? (rankSort.asc?'&#9650;':'&#9660;') : '';
+    head += `<th onclick="sortRankings('${c.key}')">${c.label}<span class="sort-arrow">${arrow}</span></th>`;
+  });
+  document.getElementById('rankings-head').innerHTML = head;
+
+  const sorted = [...DATA_MARKETS].sort((a,b)=>{
+    let va=a[rankSort.col], vb=b[rankSort.col];
+    if(va==null) return 1; if(vb==null) return -1;
+    if(typeof va==='string') return rankSort.asc?va.localeCompare(vb):vb.localeCompare(va);
+    return rankSort.asc?va-vb:vb-va;
+  });
+
+  let body = '';
+  sorted.forEach(m=>{
+    body += '<tr>';
+    RANK_COLS.forEach(c=>{ body += `<td>${c.fmt(m[c.key])}</td>`; });
+    body += '</tr>';
+  });
+  document.getElementById('rankings-body').innerHTML = body;
+}
+
+function sortRankings(col){
+  if(rankSort.col===col) rankSort.asc=!rankSort.asc;
+  else { rankSort.col=col; rankSort.asc=true; }
+  renderRankings();
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB 3: Market Deep Dive
+// ══════════════════════════════════════════════════════════════════
+function initDeepDive(){
+  const sel = document.getElementById('market-select');
+  DATA_MARKETS.forEach((m,i)=>{
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = `#${m.market_rank} — ${m.cbsa_title}`;
+    sel.appendChild(opt);
+  });
+}
+
+function renderDeepDive(){
+  const m = DATA_MARKETS[document.getElementById('market-select').value];
+  if(!m) return;
+
+  // Metric cards
+  document.getElementById('dd-cards').innerHTML = `
+    <div class="card"><div class="label">Cap Rate</div><div class="value">${fmtPct(m.cap_rate)}</div></div>
+    <div class="card"><div class="label">Cash-on-Cash</div><div class="value">${fmtPct(m.cash_on_cash_return)}</div></div>
+    <div class="card"><div class="label">DSCR</div><div class="value">${m.dscr!=null?m.dscr.toFixed(3):'—'}</div></div>
+    <div class="card"><div class="label">5-Year IRR</div><div class="value">${fmtPct(m.irr_5yr)}</div></div>
+  `;
+
+  // Cash flow bar chart
+  const cfLabels = ['Annual NOI','Debt Service','Cash Flow'];
+  const cfVals = [m.annual_noi, -(m.annual_debt_service||0), m.annual_cash_flow];
+  Plotly.newPlot('dd-cashflow', [{
+    x:cfLabels, y:cfVals, type:'bar',
+    marker:{color:[PALETTE[0],PALETTE[4],cfVals[2]>=0?PALETTE[5]:PALETTE[4]]},
+  }], {
+    ...PLOTLY_LAYOUT,
+    title:{text:'Annual Cash Flow Breakdown',font:{size:14,color:'#F8FAFC'}},
+    yaxis:{...PLOTLY_LAYOUT.yaxis,tickformat:'$,.0f'},
+  }, PLOTLY_CFG);
+
+  // IRR bars
+  const irrLabels = ['5-Year','7-Year','10-Year'];
+  const irrVals = [m.irr_5yr, m.irr_7yr, m.irr_10yr];
+  Plotly.newPlot('dd-irr', [{
+    x:irrLabels, y:irrVals.map(v=>v!=null?v*100:0), type:'bar',
+    marker:{color:[PALETTE[0],PALETTE[1],PALETTE[2]]},
+    text:irrVals.map(v=>v!=null?(v*100).toFixed(1)+'%':'—'), textposition:'outside',
+    textfont:{color:'#F8FAFC'},
+  }], {
+    ...PLOTLY_LAYOUT,
+    title:{text:'IRR by Horizon',font:{size:14,color:'#F8FAFC'}},
+    yaxis:{...PLOTLY_LAYOUT.yaxis,title:'IRR (%)',ticksuffix:'%'},
+  }, PLOTLY_CFG);
+
+  // CAGR bars
+  const cagrLabels = ['3-Year','5-Year','10-Year'];
+  const cagrVals = [m.cagr_3yr, m.cagr_5yr, m.cagr_10yr];
+  Plotly.newPlot('dd-cagr', [{
+    x:cagrLabels, y:cagrVals.map(v=>v!=null?v*100:0), type:'bar',
+    marker:{color:[PALETTE[5],PALETTE[6],PALETTE[7]]},
+    text:cagrVals.map(v=>v!=null?(v*100).toFixed(1)+'%':'—'), textposition:'outside',
+    textfont:{color:'#F8FAFC'},
+  }], {
+    ...PLOTLY_LAYOUT,
+    title:{text:'CAGR by Horizon',font:{size:14,color:'#F8FAFC'}},
+    yaxis:{...PLOTLY_LAYOUT.yaxis,title:'CAGR (%)',ticksuffix:'%'},
+  }, PLOTLY_CFG);
+
+  // Comparables
+  let comps = m.comparable_markets;
+  if(typeof comps === 'string'){
+    try{ comps = JSON.parse(comps.replace(/'/g,'"')); }catch(e){ comps=[]; }
+  }
+  let compHtml = '';
+  if(comps && comps.length){
+    compHtml += `<ul class="comp-list">`;
+    comps.forEach(c=>{ compHtml += `<li>${c}</li>`; });
+    compHtml += `</ul>`;
+    compHtml += `<div style="margin-top:12px;font-size:12px;color:var(--muted)">`;
+    compHtml += `Avg Price: ${fmtDollar(m.comp_avg_price)} &middot; Avg Rent: ${fmtDollar(m.comp_avg_rent)} &middot; Avg Growth: ${m.comp_avg_price_growth!=null?m.comp_avg_price_growth.toFixed(1)+'%':'—'}`;
+    compHtml += `</div>`;
+  } else {
+    compHtml = '<p style="color:var(--muted)">No comparable markets data</p>';
+  }
+  document.getElementById('dd-comps').innerHTML = compHtml;
+
+  // Risk factors
+  const dscr_class = m.dscr>=1.25?'green':m.dscr>=1.0?'yellow':'red';
+  const evict_class = (m.eviction_timeline_days||0)<=30?'green':(m.eviction_timeline_days||0)<=60?'yellow':'red';
+  const rc = m.rent_control_status||'unknown';
+  const rc_class = rc==='preempted'?'green':rc==='none'?'green':'yellow';
+  document.getElementById('dd-risk').innerHTML = `
+    <h3 style="font-size:14px;color:var(--muted);margin-bottom:12px">Risk Factors</h3>
+    <div>
+      <span class="risk-tag ${dscr_class}">DSCR ${m.dscr!=null?m.dscr.toFixed(2):'—'}</span>
+      <span class="risk-tag ${evict_class}">Eviction ${m.eviction_timeline_days||'—'} days</span>
+      <span class="risk-tag ${rc_class}">Rent Control: ${rc}</span>
+      <span class="risk-tag ${(m.landlord_friendliness_score||0)>=7?'green':(m.landlord_friendliness_score||0)>=4?'yellow':'red'}">LL Score ${m.landlord_friendliness_score||'—'}/10</span>
+      <span class="risk-tag ${(m.break_even_occupancy||1)<=0.85?'green':(m.break_even_occupancy||1)<=0.95?'yellow':'red'}">Break-Even Occ ${m.break_even_occupancy!=null?(m.break_even_occupancy*100).toFixed(1)+'%':'—'}</span>
+    </div>
+    <div style="margin-top:12px;font-size:12px;color:var(--muted)">
+      State: ${m.state_abbrev||'—'} &middot; Population: ${fmtNum(m.population)} &middot;
+      Median HH Income: ${fmtDollar(m.median_household_income)} &middot;
+      Migration Score: ${m.migration_score!=null?m.migration_score.toFixed(1):'—'} &middot;
+      Diversification Score: ${m.diversification_score!=null?m.diversification_score.toFixed(1):'—'} &middot;
+      Max Props @$200k: ${m.max_properties_200k||'—'} &middot; @$500k: ${m.max_properties_500k||'—'} &middot;
+      Mortgage Rate: ${m.mortgage_rate_30yr!=null?m.mortgage_rate_30yr.toFixed(2)+'%':'—'}
+    </div>
+  `;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB 4: Portfolio Optimization
+// ══════════════════════════════════════════════════════════════════
+let portfolioRendered = false;
+function renderPortfolio(){
+  if(portfolioRendered) return;
+  portfolioRendered = true;
+
+  // Correlation heatmap
+  const labels = DATA_CORR.labels.map(shortName);
+  Plotly.newPlot('corr-heatmap', [{
+    z:DATA_CORR.values, x:labels, y:labels,
+    type:'heatmap', colorscale:[[0,'#0F172A'],[0.5,'#0D9488'],[1,'#38BDF8']],
+    zmin:0, zmax:1,
+  }], {
+    ...PLOTLY_LAYOUT,
+    title:{text:'Price Correlation Matrix',font:{size:15,color:'#F8FAFC'}},
+    margin:{t:40,b:120,l:140,r:20},
+    xaxis:{...PLOTLY_LAYOUT.xaxis,tickangle:-45},
+  }, PLOTLY_CFG);
+
+  // Risk-return scatter
+  Plotly.newPlot('risk-return', [{
+    x:DATA_STRATEGIES.map(s=>s.portfolio_volatility!=null?s.portfolio_volatility*100:0),
+    y:DATA_STRATEGIES.map(s=>s.portfolio_return!=null?s.portfolio_return*100:0),
+    text:DATA_STRATEGIES.map(s=>s.strategy||s.name),
+    mode:'markers+text', type:'scatter',
+    marker:{size:16,color:PALETTE.slice(0,DATA_STRATEGIES.length)},
+    textposition:'top center', textfont:{color:'#F8FAFC',size:12},
+  }], {
+    ...PLOTLY_LAYOUT,
+    title:{text:'Risk vs Return by Strategy',font:{size:14,color:'#F8FAFC'}},
+    xaxis:{...PLOTLY_LAYOUT.xaxis,title:'Volatility (%)',ticksuffix:'%'},
+    yaxis:{...PLOTLY_LAYOUT.yaxis,title:'Return (%)',ticksuffix:'%'},
+  }, PLOTLY_CFG);
+
+  // Diversification benefit bars
+  Plotly.newPlot('div-benefit', [{
+    x:DATA_STRATEGIES.map(s=>s.strategy||s.name),
+    y:DATA_STRATEGIES.map(s=>s.diversification_benefit!=null?s.diversification_benefit*100:0),
+    type:'bar',
+    marker:{color:PALETTE.slice(0,DATA_STRATEGIES.length)},
+    text:DATA_STRATEGIES.map(s=>s.diversification_benefit!=null?(s.diversification_benefit*100).toFixed(1)+'%':'—'),
+    textposition:'outside', textfont:{color:'#F8FAFC'},
+  }], {
+    ...PLOTLY_LAYOUT,
+    title:{text:'Diversification Benefit',font:{size:14,color:'#F8FAFC'}},
+    yaxis:{...PLOTLY_LAYOUT.yaxis,title:'Benefit (%)',ticksuffix:'%'},
+  }, PLOTLY_CFG);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// TAB 5: Investment Memo
+// ══════════════════════════════════════════════════════════════════
+function renderMemo(){
+  document.getElementById('memo-rendered').innerHTML = marked.parse(DATA_MEMO);
+}
+
+function downloadMemo(){
+  const blob = new Blob([DATA_MEMO], {type:'text/markdown'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'vero_capital_investment_memo.md';
+  a.click();
+}
+
+// ── Init ──
+renderSummary();
+renderRankings();
+initDeepDive();
+renderMemo();
+</script>
+</body>
+</html>
