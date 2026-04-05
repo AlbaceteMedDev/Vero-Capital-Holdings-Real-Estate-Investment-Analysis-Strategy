@@ -70,7 +70,7 @@ def main():
 <meta name="theme-color" content="#1d1d1f">
 <title>Vero Capital Holdings - Real Estate Investment Dashboard</title>
 <link rel="icon" type="image/png" href="vero-capital-icon-light.png">
-<link rel="apple-touch-icon" href="vero-capital-icon-light.png">
+<link rel="apple-touch-icon" href="vero-stacked-dark.png">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
@@ -95,8 +95,8 @@ a{{color:var(--accent)}}
   border-right:1px solid var(--border);position:fixed;top:0;left:0;
   display:flex;flex-direction:column;z-index:100;
 }}
-.sidebar .brand{{padding:20px 20px;border-bottom:1px solid var(--border);text-align:center}}
-.sidebar .brand img{{max-width:180px;height:auto;margin:0 auto;display:block}}
+.sidebar .brand{{padding:24px 20px;border-bottom:1px solid var(--border);text-align:center}}
+.sidebar .brand img{{max-width:150px;height:auto;margin:0 auto;display:block}}
 .sidebar nav{{padding:12px 0;flex:1}}
 .sidebar nav button{{
   display:block;width:100%;text-align:left;padding:12px 20px;
@@ -192,7 +192,7 @@ h2.section-title{{font-size:18px;color:var(--text);margin-bottom:16px;padding-bo
     padding:12px 16px;display:flex;align-items:center;justify-content:center;
     border-bottom:1px solid var(--border);
   }}
-  .sidebar .brand img{{max-width:140px}}
+  .sidebar .brand img{{max-width:80px}}
   .sidebar nav{{
     display:flex;padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch;
     scrollbar-width:none;
@@ -246,7 +246,7 @@ h2.section-title{{font-size:18px;color:var(--text);margin-bottom:16px;padding-bo
 
 /* Small phones (iPhone SE / mini) */
 @media(max-width:375px){{
-  .sidebar .brand img{{max-width:120px}}
+  .sidebar .brand img{{max-width:60px}}
   .sidebar nav button{{padding:10px 12px;font-size:11px}}
   .card .value{{font-size:18px}}
   .main{{padding:12px}}
@@ -257,7 +257,7 @@ h2.section-title{{font-size:18px;color:var(--text);margin-bottom:16px;padding-bo
 
 <div class="sidebar">
   <div class="brand">
-    <img src="vero-final-dark-trimmed.png" alt="Vero Capital Holdings">
+    <img src="vero-stacked-dark.png" alt="Vero Capital Holdings">
   </div>
   <nav>
     <button class="active" onclick="showTab('summary',this)">Executive Summary</button>
