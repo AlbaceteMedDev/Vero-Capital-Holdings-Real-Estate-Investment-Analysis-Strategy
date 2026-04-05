@@ -65,15 +65,15 @@ def main():
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vero Capital Holdings - Real Estate Investment Dashboard</title>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100' height='100' rx='20' fill='%232D2D2D'/%3E%3Cpolygon points='24,22 50,82 76,22 65,22 50,60 35,22' fill='%23F0F0F0'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="vero-capital-icon-light.png">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
 *{{margin:0;padding:0;box-sizing:border-box}}
 :root{{
-  --bg:#0F172A;--card:#1E293B;--border:#334155;
-  --primary:#0D9488;--accent:#38BDF8;
-  --text:#F8FAFC;--muted:#94A3B8;
+  --bg:#1d1d1f;--card:#2a2a2c;--border:#3a3a3c;
+  --primary:#C9A96E;--accent:#C9A96E;
+  --text:#f5f5f7;--muted:#a1a1a6;
   --sidebar-w:240px;
 }}
 body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}}
@@ -86,18 +86,15 @@ a{{color:var(--accent)}}
   display:flex;flex-direction:column;z-index:100;
 }}
 .sidebar .brand{{padding:20px 20px;border-bottom:1px solid var(--border);text-align:center}}
-.sidebar .brand .logo-icon{{width:48px;height:48px;margin:0 auto 12px}}
-.sidebar .brand h1{{font-size:18px;font-weight:800;color:#F8FAFC;letter-spacing:0.08em;line-height:1.2}}
-.sidebar .brand .divider{{width:60%;height:1px;background:linear-gradient(90deg,transparent,#B8975A,transparent);margin:8px auto}}
-.sidebar .brand p{{font-size:10px;color:#B8975A;letter-spacing:0.25em;text-transform:uppercase;margin-top:4px}}
+.sidebar .brand img{{max-width:180px;height:auto;margin:0 auto;display:block}}
 .sidebar nav{{padding:12px 0;flex:1}}
 .sidebar nav button{{
   display:block;width:100%;text-align:left;padding:12px 20px;
   background:none;border:none;color:var(--muted);font-size:13px;
   cursor:pointer;transition:all .15s;border-left:3px solid transparent;
 }}
-.sidebar nav button:hover{{color:var(--text);background:rgba(13,148,136,.08)}}
-.sidebar nav button.active{{color:var(--primary);border-left-color:var(--primary);background:rgba(13,148,136,.1)}}
+.sidebar nav button:hover{{color:var(--text);background:rgba(201,169,110,.08)}}
+.sidebar nav button.active{{color:var(--primary);border-left-color:var(--primary);background:rgba(201,169,110,.1)}}
 
 /* Main */
 .main{{margin-left:var(--sidebar-w);flex:1;padding:32px;max-width:1400px}}
@@ -182,15 +179,7 @@ h2.section-title{{font-size:18px;color:var(--text);margin-bottom:16px;padding-bo
 
 <div class="sidebar">
   <div class="brand">
-    <div class="logo-icon">
-      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100" height="100" rx="20" fill="#2D2D2D"/>
-        <polygon points="24,22 50,82 76,22 65,22 50,60 35,22" fill="#F0F0F0"/>
-      </svg>
-    </div>
-    <h1>VERO</h1>
-    <div class="divider"></div>
-    <p>Capital Holdings</p>
+    <img src="vero-final-dark-trimmed.png" alt="Vero Capital Holdings">
   </div>
   <nav>
     <button class="active" onclick="showTab('summary',this)">Executive Summary</button>
@@ -270,13 +259,13 @@ const DATA_CAPITAL = {capital_json};
 const DATA_CORR = {corr_json};
 const DATA_MEMO = {memo_escaped};
 
-const PALETTE = ["#0D9488","#38BDF8","#A78BFA","#FB923C","#F472B6","#34D399","#FBBF24","#818CF8"];
+const PALETTE = ["#C9A96E","#E8D5B0","#8B7D6B","#D4A849","#A89060","#BFA76F","#F0DBA8","#9C8B6E"];
 const PLOTLY_LAYOUT = {{
   paper_bgcolor:'transparent', plot_bgcolor:'transparent',
   font:{{color:'#F8FAFC',size:12}},
   margin:{{t:40,b:50,l:60,r:20}},
-  xaxis:{{gridcolor:'#334155',zerolinecolor:'#334155'}},
-  yaxis:{{gridcolor:'#334155',zerolinecolor:'#334155'}},
+  xaxis:{{gridcolor:'#3a3a3c',zerolinecolor:'#3a3a3c'}},
+  yaxis:{{gridcolor:'#3a3a3c',zerolinecolor:'#3a3a3c'}},
 }};
 const PLOTLY_CFG = {{displayModeBar:false,responsive:true}};
 
@@ -509,7 +498,7 @@ function renderPortfolio(){{
   const labels = DATA_CORR.labels.map(shortName);
   Plotly.newPlot('corr-heatmap', [{{
     z:DATA_CORR.values, x:labels, y:labels,
-    type:'heatmap', colorscale:[[0,'#0F172A'],[0.5,'#0D9488'],[1,'#38BDF8']],
+    type:'heatmap', colorscale:[[0,'#1d1d1f'],[0.5,'#8B7D6B'],[1,'#C9A96E']],
     zmin:0, zmax:1,
   }}], {{
     ...PLOTLY_LAYOUT,
