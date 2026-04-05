@@ -65,6 +65,7 @@ def main():
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Vero Capital Holdings - Real Estate Investment Dashboard</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='100' height='100' rx='20' fill='%232D2D2D'/%3E%3Cpolygon points='24,22 50,82 76,22 65,22 50,60 35,22' fill='%23F0F0F0'/%3E%3C/svg%3E">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
@@ -84,9 +85,11 @@ a{{color:var(--accent)}}
   border-right:1px solid var(--border);position:fixed;top:0;left:0;
   display:flex;flex-direction:column;z-index:100;
 }}
-.sidebar .brand{{padding:24px 20px;border-bottom:1px solid var(--border)}}
-.sidebar .brand h1{{font-size:16px;color:var(--primary);line-height:1.3}}
-.sidebar .brand p{{font-size:11px;color:var(--muted);margin-top:4px}}
+.sidebar .brand{{padding:20px 20px;border-bottom:1px solid var(--border);text-align:center}}
+.sidebar .brand .logo-icon{{width:48px;height:48px;margin:0 auto 12px}}
+.sidebar .brand h1{{font-size:18px;font-weight:800;color:#F8FAFC;letter-spacing:0.08em;line-height:1.2}}
+.sidebar .brand .divider{{width:60%;height:1px;background:linear-gradient(90deg,transparent,#B8975A,transparent);margin:8px auto}}
+.sidebar .brand p{{font-size:10px;color:#B8975A;letter-spacing:0.25em;text-transform:uppercase;margin-top:4px}}
 .sidebar nav{{padding:12px 0;flex:1}}
 .sidebar nav button{{
   display:block;width:100%;text-align:left;padding:12px 20px;
@@ -179,8 +182,15 @@ h2.section-title{{font-size:18px;color:var(--text);margin-bottom:16px;padding-bo
 
 <div class="sidebar">
   <div class="brand">
-    <h1>Vero Capital<br>Holdings</h1>
-    <p>Investment Analytics</p>
+    <div class="logo-icon">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <rect width="100" height="100" rx="20" fill="#2D2D2D"/>
+        <polygon points="24,22 50,82 76,22 65,22 50,60 35,22" fill="#F0F0F0"/>
+      </svg>
+    </div>
+    <h1>VERO</h1>
+    <div class="divider"></div>
+    <p>Capital Holdings</p>
   </div>
   <nav>
     <button class="active" onclick="showTab('summary',this)">Executive Summary</button>
