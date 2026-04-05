@@ -63,9 +63,14 @@ def main():
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Vero Capital">
+<meta name="theme-color" content="#1d1d1f">
 <title>Vero Capital Holdings - Real Estate Investment Dashboard</title>
 <link rel="icon" type="image/png" href="vero-capital-icon-light.png">
+<link rel="apple-touch-icon" href="vero-capital-icon-light.png">
 <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
@@ -76,7 +81,12 @@ def main():
   --text:#f5f5f7;--muted:#a1a1a6;
   --sidebar-w:240px;
 }}
-body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh}}
+body{{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+  background:var(--bg);color:var(--text);display:flex;min-height:100vh;
+  padding:env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-text-size-adjust:100%;
+}}
 a{{color:var(--accent)}}
 
 /* Sidebar */
@@ -121,7 +131,7 @@ th{{background:var(--card);position:sticky;top:0;cursor:pointer;padding:10px 12p
 th:hover{{color:var(--primary)}}
 th .sort-arrow{{margin-left:4px;font-size:10px}}
 td{{padding:10px 12px;border-bottom:1px solid var(--border);white-space:nowrap}}
-tr:hover td{{background:rgba(13,148,136,.05)}}
+tr:hover td{{background:rgba(201,169,110,.05)}}
 
 /* Chart containers */
 .chart-box{{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:24px}}
@@ -159,19 +169,87 @@ h2.section-title{{font-size:18px;color:var(--text);margin-bottom:16px;padding-bo
 .dd-grid{{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}}
 .comp-list{{list-style:none;padding:0}}.comp-list li{{padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}}
 
+/* Tablet */
 @media(max-width:1100px){{
   .cards-4{{grid-template-columns:repeat(2,1fr)}}
   .cards-3{{grid-template-columns:1fr}}
   .chart-row-2{{grid-template-columns:1fr}}
   .dd-grid{{grid-template-columns:1fr}}
 }}
+
+/* Mobile */
 @media(max-width:768px){{
-  .sidebar{{width:100%;height:auto;position:relative;flex-direction:row;min-height:auto}}
-  .sidebar .brand{{display:none}}
-  .sidebar nav{{display:flex;padding:0;overflow-x:auto}}
-  .sidebar nav button{{white-space:nowrap;border-left:none;border-bottom:3px solid transparent;padding:10px 16px}}
+  :root{{--sidebar-w:0px}}
+  body{{flex-direction:column}}
+
+  /* Sidebar becomes top nav bar */
+  .sidebar{{
+    width:100%;height:auto;position:sticky;top:0;
+    flex-direction:column;min-height:auto;
+    border-right:none;border-bottom:1px solid var(--border);
+  }}
+  .sidebar .brand{{
+    padding:12px 16px;display:flex;align-items:center;justify-content:center;
+    border-bottom:1px solid var(--border);
+  }}
+  .sidebar .brand img{{max-width:140px}}
+  .sidebar nav{{
+    display:flex;padding:0;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }}
+  .sidebar nav::-webkit-scrollbar{{display:none}}
+  .sidebar nav button{{
+    white-space:nowrap;border-left:none;flex-shrink:0;
+    border-bottom:3px solid transparent;
+    padding:12px 16px;font-size:12px;min-width:auto;
+  }}
   .sidebar nav button.active{{border-bottom-color:var(--primary);border-left-color:transparent}}
-  .main{{margin-left:0}}
+
+  /* Main content */
+  .main{{margin-left:0;padding:16px;max-width:100vw;overflow-x:hidden}}
+
+  /* Cards stack vertically */
+  .cards-4,.cards-3,.cards-2{{grid-template-columns:1fr}}
+  .card .value{{font-size:22px}}
+  .card.strategy-card .value{{font-size:16px}}
+  .card{{padding:16px}}
+
+  /* Tables scroll */
+  .table-wrap{{-webkit-overflow-scrolling:touch}}
+  table{{font-size:12px}}
+  th,td{{padding:8px 10px}}
+
+  /* Charts full width */
+  .chart-row-2{{grid-template-columns:1fr}}
+  .chart-box{{padding:10px}}
+
+  /* Dropdowns */
+  select{{min-width:100%;font-size:16px}} /* 16px prevents iOS zoom */
+
+  /* Memo */
+  .memo-content{{padding:16px;font-size:13px}}
+
+  /* Section titles */
+  h2.section-title{{font-size:16px}}
+
+  /* Strategy cards */
+  .card.strategy-card{{padding:14px}}
+  .strategy-row{{font-size:12px}}
+  .strategy-row span:first-child{{min-width:0}}
+
+  /* Deep dive */
+  .dd-grid{{grid-template-columns:1fr}}
+
+  /* Buttons */
+  .btn{{width:100%;text-align:center;padding:12px 20px;font-size:14px}}
+}}
+
+/* Small phones (iPhone SE / mini) */
+@media(max-width:375px){{
+  .sidebar .brand img{{max-width:120px}}
+  .sidebar nav button{{padding:10px 12px;font-size:11px}}
+  .card .value{{font-size:18px}}
+  .main{{padding:12px}}
 }}
 </style>
 </head>
