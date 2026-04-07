@@ -1,17 +1,14 @@
 # Vero Capital Holdings — Daily Pipeline Refresh & Dashboard Deploy
 #
-# Runs at 6:00 AM EST (11:00 UTC) every day.
+# Runs at 6:00 AM EST (11:00 UTC) every weekday.
 # Fetches fresh data from Census, BLS, FRED, and Zillow APIs,
 # re-runs the full analysis pipeline, regenerates the static
-# dashboard, and deploys to GitHub Pages.
-#
-# Can also be triggered manually via workflow_dispatch.
+# dashboard, and pushes updated docs/ to main for GitHub Pages.
 
 name: Daily Pipeline Refresh
 
 on:
   schedule:
-    # 6:00 AM EST / 11:00 UTC, Monday through Friday
     - cron: '0 11 * * 1-5'
   workflow_dispatch:
     inputs:
@@ -19,27 +16,20 @@ on:
         description: 'Capital budget ($)'
         required: false
         default: '350000'
-      force:
-        description: 'Force refresh even if data is fresh'
-        required: false
-        type: boolean
-        default: true
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   refresh-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout repository
+      - name: Checkout main branch
         uses: actions/checkout@v4
         with:
-          ref: claude/real-estate-pipeline-phase-1-Uminx
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -51,15 +41,11 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Configure API keys
-        env:
-          BLS_API_KEY: ${{ secrets.BLS_API_KEY }}
-          FRED_API_KEY: ${{ secrets.FRED_API_KEY }}
-          CENSUS_API_KEY: ${{ secrets.CENSUS_API_KEY }}
         run: |
           cat > .env << EOF
-          BLS_API_KEY=${BLS_API_KEY}
-          FRED_API_KEY=${FRED_API_KEY}
-          CENSUS_API_KEY=${CENSUS_API_KEY}
+          BLS_API_KEY=${{ secrets.BLS_API_KEY }}
+          FRED_API_KEY=${{ secrets.FRED_API_KEY }}
+          CENSUS_API_KEY=${{ secrets.CENSUS_API_KEY }}
           EOF
 
       - name: Run full pipeline
@@ -67,46 +53,35 @@ jobs:
           CAPITAL: ${{ github.event.inputs.capital || '350000' }}
         run: |
           python -m src.main --run full --capital $CAPITAL
-          echo "Pipeline completed at $(date -u)"
 
       - name: Rebuild static dashboard
         run: |
           python scripts/generate_html.py
-          echo "Dashboard rebuilt at $(date -u)"
           ls -la docs/index.html
 
       - name: Write refresh timestamp
         run: |
-          python -c "
+          python3 -c "
           import json
           from datetime import datetime
           meta = {
               'last_refresh': datetime.utcnow().isoformat() + 'Z',
               'triggered_by': '${{ github.event_name }}',
-              'capital': ${{ github.event.inputs.capital || '350000' }},
+              'capital': int('${{ github.event.inputs.capital || '350000' }}'),
+              'status': 'success',
           }
           with open('docs/refresh_meta.json', 'w') as f:
               json.dump(meta, f, indent=2)
           "
 
-      - name: Commit and push updated data
+      - name: Commit and push to main
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/ outputs/
-          git diff --staged --quiet && echo "No changes to commit" || \
-            git commit -m "Daily refresh: $(date -u +%Y-%m-%d) pipeline data and dashboard update"
-          git push
-
-      - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
-        with:
-          artifact_name: github-pages
-        continue-on-error: true
-
-      # Alternative simpler Pages deploy (just serve from docs/ on the branch)
-      - name: Verify deployment
-        run: |
-          echo "Dashboard updated and pushed."
-          echo "View at: https://${{ github.repository_owner }}.github.io/$(echo ${{ github.repository }} | cut -d'/' -f2)/"
-          echo "Last refresh: $(date -u)"
+          if git diff --staged --quiet; then
+            echo "No data changes detected"
+          else
+            git commit -m "Daily refresh: $(date -u +%Y-%m-%d) pipeline data update"
+            git push origin main
+          fi
