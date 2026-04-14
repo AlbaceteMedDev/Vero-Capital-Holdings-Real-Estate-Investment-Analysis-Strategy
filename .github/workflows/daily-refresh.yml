@@ -1,9 +1,8 @@
 # Vero Capital Holdings — Daily Pipeline Refresh & Dashboard Deploy
 #
-# Runs at 6:00 AM EST (11:00 UTC) every weekday.
-# Fetches fresh data from Census, BLS, FRED, and Zillow APIs,
-# re-runs the full analysis pipeline, regenerates the static
-# dashboard, and pushes updated docs/ to main for GitHub Pages.
+# Runs at 6:00 AM EST (11:00 UTC) every weekday. Can also be triggered manually.
+# Fetches fresh data, re-runs analysis pipeline, regenerates static dashboard,
+# and pushes docs/ updates to main so GitHub Pages redeploys.
 
 name: Daily Pipeline Refresh
 
@@ -20,16 +19,23 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: daily-refresh
+  cancel-in-progress: false
+
 jobs:
   refresh-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
 
     steps:
       - name: Checkout main branch
         uses: actions/checkout@v4
         with:
           ref: main
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -47,12 +53,14 @@ jobs:
           FRED_API_KEY=${{ secrets.FRED_API_KEY }}
           CENSUS_API_KEY=${{ secrets.CENSUS_API_KEY }}
           EOF
+          echo "API key lengths:"
+          echo "  BLS: $(echo -n '${{ secrets.BLS_API_KEY }}' | wc -c)"
+          echo "  FRED: $(echo -n '${{ secrets.FRED_API_KEY }}' | wc -c)"
 
       - name: Run full pipeline
         env:
           CAPITAL: ${{ github.event.inputs.capital || '350000' }}
-        run: |
-          python -m src.main --run full --capital $CAPITAL
+        run: python -m src.main --run full --capital $CAPITAL
 
       - name: Rebuild static dashboard
         run: |
@@ -61,27 +69,62 @@ jobs:
 
       - name: Write refresh timestamp
         run: |
-          python3 -c "
+          python3 <<'PYEOF'
           import json
-          from datetime import datetime
+          from datetime import datetime, timezone
           meta = {
-              'last_refresh': datetime.utcnow().isoformat() + 'Z',
-              'triggered_by': '${{ github.event_name }}',
-              'capital': int('${{ github.event.inputs.capital || '350000' }}'),
-              'status': 'success',
+              "last_refresh": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+              "triggered_by": "${{ github.event_name }}",
+              "capital": int("${{ github.event.inputs.capital || '350000' }}"),
+              "status": "success",
           }
-          with open('docs/refresh_meta.json', 'w') as f:
+          with open("docs/refresh_meta.json", "w") as f:
               json.dump(meta, f, indent=2)
-          "
+          print("Refresh meta written:", meta)
+          PYEOF
+
+      - name: Show what changed
+        run: |
+          git status
+          echo "---"
+          git diff --stat
 
       - name: Commit and push to main
         run: |
+          set -e
           git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add docs/ outputs/
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # Only add docs/ — outputs/ is gitignored so skip it
+          git add -A docs/
+
           if git diff --staged --quiet; then
-            echo "No data changes detected"
-          else
-            git commit -m "Daily refresh: $(date -u +%Y-%m-%d) pipeline data update"
-            git push origin main
+            echo "No changes in docs/ — nothing to commit"
+            exit 0
           fi
+
+          git commit -m "Daily refresh: $(date -u +%Y-%m-%d) [skip ci]"
+
+          # Push with retry — handles races with other commits
+          for attempt in 1 2 3; do
+            echo "Push attempt $attempt..."
+            if git push origin main; then
+              echo "Push succeeded"
+              exit 0
+            fi
+            echo "Push failed, pulling and retrying..."
+            git pull --rebase origin main || {
+              echo "Rebase failed, aborting"
+              git rebase --abort || true
+              sleep 5
+            }
+          done
+
+          echo "All push attempts failed"
+          exit 1
+
+      - name: Report status
+        if: always()
+        run: |
+          echo "Workflow finished at $(date -u)"
+          echo "Site URL: https://dashboardverocapitalholdings.com"
