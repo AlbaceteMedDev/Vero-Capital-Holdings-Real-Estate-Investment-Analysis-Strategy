@@ -79,7 +79,7 @@ tr:hover td{background:rgba(201,169,110,.05)}
 
 /* Dropdown */
 select{background:var(--card);color:var(--text);border:1px solid var(--border);
-  padding:10px 14px;border-radius:8px;font-size:14px;margin-bottom:20px;min-width:300px}
+  padding:10px 14px;border-radius:8px;font-size:16px;margin-bottom:20px;width:100%;max-width:400px}
 select:focus{outline:none;border-color:var(--primary)}
 
 /* Memo */
@@ -158,37 +158,51 @@ h2.section-title{font-size:18px;color:var(--text);margin-bottom:16px;padding-bot
   table{font-size:12px}
   th,td{padding:8px 10px}
 
-  /* Charts full width */
+  /* Charts full width and shorter */
   .chart-row-2{grid-template-columns:1fr}
-  .chart-box{padding:10px}
+  .chart-box{padding:8px;overflow:hidden}
+  .chart-box>div{height:250px !important}
 
-  /* Dropdowns */
-  select{min-width:100%;font-size:16px} /* 16px prevents iOS zoom */
+  /* Dropdowns full width, 16px prevents iOS zoom */
+  select{width:100%;max-width:100%;font-size:16px}
 
   /* Memo */
-  .memo-content{padding:16px;font-size:13px}
+  .memo-content{padding:14px;font-size:13px;overflow-x:auto}
+  .memo-content table{font-size:11px;display:block;overflow-x:auto}
 
   /* Section titles */
-  h2.section-title{font-size:16px}
+  h2.section-title{font-size:16px;margin-bottom:12px}
 
   /* Strategy cards */
   .card.strategy-card{padding:14px}
-  .strategy-row{font-size:12px}
+  .strategy-row{font-size:12px;gap:4px}
   .strategy-row span:first-child{min-width:0}
+  .strategy-row span{word-break:break-word}
 
   /* Deep dive */
   .dd-grid{grid-template-columns:1fr}
+  .comp-list li{font-size:12px;word-break:break-word}
 
   /* Buttons */
-  .btn{width:100%;text-align:center;padding:12px 20px;font-size:14px}
+  .btn{width:100%;text-align:center;padding:14px 20px;font-size:14px;border-radius:10px}
+
+  /* Risk tags wrap */
+  .risk-tag{font-size:10px;margin:2px 2px}
+
+  /* Plotly modebar hidden on mobile */
+  .modebar{display:none !important}
 }
 
 /* Small phones (iPhone SE / mini) */
 @media(max-width:375px){
-  .sidebar .brand img{max-width:60px}
-  .sidebar nav button{padding:10px 12px;font-size:11px}
+  .sidebar .brand img{max-width:55px}
+  .sidebar nav button{padding:10px 10px;font-size:10px}
   .card .value{font-size:18px}
-  .main{padding:12px}
+  .card{padding:12px}
+  .main{padding:10px}
+  .chart-box>div{height:220px !important}
+  .memo-content{padding:10px;font-size:12px}
+  h2.section-title{font-size:14px}
 }
 </style>
 </head>
@@ -252,7 +266,7 @@ h2.section-title{font-size:18px;color:var(--text);margin-bottom:16px;padding-bot
 <!-- TAB 4: Portfolio Optimization -->
 <div id="tab-portfolio" class="tab">
   <h2 class="section-title">Portfolio Optimization</h2>
-  <div class="chart-box"><div id="corr-heatmap" style="height:550px"></div></div>
+  <div class="chart-box"><div id="corr-heatmap" style="height:min(550px, 80vw)"></div></div>
   <div class="chart-row chart-row-2">
     <div class="chart-box"><div id="risk-return" style="height:380px"></div></div>
     <div class="chart-box"><div id="div-benefit" style="height:380px"></div></div>
