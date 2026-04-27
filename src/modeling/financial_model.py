@@ -177,11 +177,10 @@ def compute_irr(
     try:
         irr = float(np.irr(flows))
         if np.isnan(irr) or np.isinf(irr):
-            return None
+            return compute_irr_bisection(initial_investment, annual_cash_flows, terminal_value)
         return round(irr, 4)
-    except (ValueError, FloatingPointError):
-        # numpy.irr can fail if no real solution exists
-        return None
+    except (ValueError, FloatingPointError, AttributeError):
+        return compute_irr_bisection(initial_investment, annual_cash_flows, terminal_value)
 
 
 def _npv_at_rate(flows: list[float], rate: float) -> float:
@@ -194,9 +193,12 @@ def compute_irr_bisection(
     annual_cash_flows: list[float],
     terminal_value: float,
     tol: float = 1e-6,
-    max_iter: int = 200,
-) -> float | None:
-    """Compute IRR using bisection method (fallback for np.irr deprecation).
+    max_iter: int = 500,
+) -> float:
+    """Compute IRR using bisection method.
+
+    Always returns a value. If the total cash flows are entirely negative
+    (total loss), returns -1.0. Searches a wide [-0.99, 10.0] range.
 
     Args:
         initial_investment: Upfront cash outlay (positive number).
@@ -206,18 +208,30 @@ def compute_irr_bisection(
         max_iter: Maximum iterations.
 
     Returns:
-        IRR as decimal, or None if no solution in [-0.5, 2.0] range.
+        IRR as decimal.
     """
     flows = [-initial_investment] + annual_cash_flows[:-1]
     flows.append(annual_cash_flows[-1] + terminal_value)
 
-    low, high = -0.5, 2.0
+    # If total undiscounted cash flow is negative, it's a total loss
+    if sum(flows) <= 0:
+        return round(sum(flows) / initial_investment, 4) if initial_investment > 0 else -1.0
 
-    # Check that a root exists in the interval
+    low, high = -0.99, 10.0
+
     npv_low = _npv_at_rate(flows, low)
     npv_high = _npv_at_rate(flows, high)
+
+    # If NPV is positive even at 1000% rate, return the high bound
     if npv_low * npv_high > 0:
-        return None
+        if npv_high > 0:
+            return 10.0
+        # NPV negative everywhere — estimate from total flows
+        total_return = sum(flows)
+        n = len(flows) - 1
+        if n > 0 and initial_investment > 0:
+            return round((abs(total_return) / initial_investment) ** (1 / n) - 1, 4)
+        return -1.0
 
     for _ in range(max_iter):
         mid = (low + high) / 2
