@@ -288,6 +288,15 @@ h2.section-title{font-size:18px;color:var(--text);margin-bottom:16px;padding-bot
   <div class="chart-box" style="margin-top:24px">
     <div id="roi-waterfall" style="height:350px"></div>
   </div>
+
+  <h2 class="section-title" style="margin-top:32px">Landlord-Friendly Markets Only (7/10+)</h2>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Filtered to states with fast evictions, preempted rent control, and strong landlord protections. Only markets scoring 7/10 or higher.</p>
+  <div class="table-wrap">
+    <table id="ll-table">
+      <thead><tr id="ll-head"></tr></thead>
+      <tbody id="ll-body"></tbody>
+    </table>
+  </div>
 </div>
 
 <!-- TAB 3: Market Deep Dive -->
@@ -532,6 +541,68 @@ function sortROI(col){
   if(roiSort.col===col) roiSort.asc=!roiSort.asc;
   else { roiSort.col=col; roiSort.asc=false; }
   renderROI();
+}
+
+// Landlord-Friendly table (LL >= 7)
+const LL_COLS = [
+  {key:'_ll_rank',label:'#',fmt:v=>v},
+  {key:'cbsa_title',label:'Market',fmt:shortName},
+  {key:'landlord_friendliness_score',label:'LL Score',fmt:v=>v!=null?'<span style="color:#C9A96E;font-weight:700">'+v+'/10</span>':'—'},
+  {key:'state_abbrev',label:'State',fmt:v=>v||'—'},
+  {key:'eviction_timeline_days',label:'Eviction',fmt:v=>v!=null?v+' days':'—'},
+  {key:'rent_control_status',label:'Rent Control',fmt:v=>{
+    if(!v||v==='unknown') return '—';
+    const color = v==='preempted'?'#34D399':v==='none'?'#34D399':'#FBBF24';
+    return '<span style="color:'+color+'">'+v+'</span>';
+  }},
+  {key:'composite_score',label:'Score',fmt:v=>v!=null?v.toFixed(1):'—'},
+  {key:'yr1_total_roi',label:'Yr1 ROI',fmt:v=>v!=null?(v*100).toFixed(1)+'%':'—'},
+  {key:'irr_5yr',label:'5yr IRR',fmt:fmtPct},
+  {key:'cap_rate',label:'Cap Rate',fmt:fmtPct},
+  {key:'median_home_price',label:'Price',fmt:fmtDollar},
+  {key:'median_rent',label:'Rent',fmt:fmtDollar},
+];
+
+let llSort = {col:'composite_score', asc:false};
+
+function renderLL(){
+  const llMarkets = DATA_MARKETS.filter(m=>(m.landlord_friendliness_score||0)>=7);
+  llMarkets.sort((a,b)=>{
+    const va=a.composite_score||0, vb=b.composite_score||0;
+    return vb-va;
+  });
+  llMarkets.forEach((m,i)=>{ m._ll_rank = i+1; });
+
+  let head = '';
+  LL_COLS.forEach(c=>{
+    const arrow = llSort.col===c.key ? (llSort.asc?'&#9650;':'&#9660;') : '';
+    head += `<th onclick="sortLL('${c.key}')">${c.label}<span class="sort-arrow">${arrow}</span></th>`;
+  });
+  document.getElementById('ll-head').innerHTML = head;
+
+  const sorted = [...llMarkets].sort((a,b)=>{
+    let va=a[llSort.col], vb=b[llSort.col];
+    if(va==null) return 1; if(vb==null) return -1;
+    if(typeof va==='string') return llSort.asc?va.localeCompare(vb):vb.localeCompare(va);
+    return llSort.asc?va-vb:vb-va;
+  });
+
+  let body = '';
+  if(sorted.length===0){
+    body = '<tr><td colspan="12" style="text-align:center;color:var(--muted);padding:24px">No markets with landlord-friendliness &ge; 7/10 in current dataset</td></tr>';
+  }
+  sorted.forEach(m=>{
+    body += '<tr>';
+    LL_COLS.forEach(c=>{ body += `<td>${c.fmt(m[c.key])}</td>`; });
+    body += '</tr>';
+  });
+  document.getElementById('ll-body').innerHTML = body;
+}
+
+function sortLL(col){
+  if(llSort.col===col) llSort.asc=!llSort.asc;
+  else { llSort.col=col; llSort.asc=false; }
+  renderLL();
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -816,6 +887,7 @@ document.getElementById('sim-capital').addEventListener('input', runSimulator);
 renderSummary();
 renderRankings();
 renderROI();
+renderLL();
 runSimulator();
 initDeepDive();
 renderMemo();
