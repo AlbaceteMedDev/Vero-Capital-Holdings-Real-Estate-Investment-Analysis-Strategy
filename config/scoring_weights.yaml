@@ -3,12 +3,12 @@
 
 scoring:
   cap_rate:
-    weight: 0.15
+    weight: 0.10
     column: cap_rate
     description: "Capitalization rate (NOI / price)"
 
   cash_on_cash:
-    weight: 0.12
+    weight: 0.08
     column: cash_on_cash_return
     description: "Cash-on-cash return"
 
@@ -18,22 +18,22 @@ scoring:
     description: "5-year IRR projection"
 
   rent_to_price:
-    weight: 0.10
+    weight: 0.08
     column: monthly_rent_to_price_pct
     description: "Monthly rent-to-price ratio"
 
   dscr:
-    weight: 0.08
+    weight: 0.05
     column: dscr
     description: "Debt service coverage ratio"
 
   landlord_friendliness:
-    weight: 0.10
+    weight: 0.20
     column: landlord_friendliness_score
     description: "State landlord-friendliness (1-10)"
 
   diversification:
-    weight: 0.08
+    weight: 0.06
     column: diversification_score
     description: "Employment diversification score"
 
@@ -43,11 +43,11 @@ scoring:
     description: "Net domestic migration score"
 
   price_growth:
-    weight: 0.08
+    weight: 0.10
     column: cagr_5yr
     description: "5-year price appreciation CAGR"
 
   rent_growth:
-    weight: 0.08
+    weight: 0.12
     column: rent_growth_pct
     description: "Year-over-year rent growth"
