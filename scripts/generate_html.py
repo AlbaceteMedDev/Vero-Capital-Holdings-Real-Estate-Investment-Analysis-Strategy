@@ -319,12 +319,25 @@ h2.section-title{{font-size:18px;color:var(--text);margin-bottom:16px;padding-bo
 
 <!-- TAB 2: Market Rankings -->
 <div id="tab-rankings" class="tab">
-  <h2 class="section-title">Market Rankings</h2>
+  <h2 class="section-title">Market Rankings — Composite Score</h2>
   <div class="table-wrap">
     <table id="rankings-table">
       <thead><tr id="rankings-head"></tr></thead>
       <tbody id="rankings-body"></tbody>
     </table>
+  </div>
+
+  <h2 class="section-title" style="margin-top:32px">Year 1 Total ROI — Cash Flow + Equity + Appreciation</h2>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:16px">Total return including mortgage paydown and property appreciation, not just cash flow. Sorted by Year 1 ROI.</p>
+  <div class="table-wrap">
+    <table id="roi-table">
+      <thead><tr id="roi-head"></tr></thead>
+      <tbody id="roi-body"></tbody>
+    </table>
+  </div>
+
+  <div class="chart-box" style="margin-top:24px">
+    <div id="roi-waterfall" style="height:350px"></div>
   </div>
 </div>
 
@@ -496,6 +509,80 @@ function sortRankings(col){{
   if(rankSort.col===col) rankSort.asc=!rankSort.asc;
   else {{ rankSort.col=col; rankSort.asc=true; }}
   renderRankings();
+}}
+
+// Year 1 Total ROI table
+const ROI_COLS = [
+  {{key:'_roi_rank',label:'Rank',fmt:v=>v}},
+  {{key:'cbsa_title',label:'Market',fmt:shortName}},
+  {{key:'yr1_total_roi',label:'Year 1 ROI',fmt:v=>v!=null?(v*100).toFixed(1)+'%':'—'}},
+  {{key:'annual_cash_flow',label:'Cash Flow',fmt:fmtDollar}},
+  {{key:'yr1_principal_paid',label:'Equity Built',fmt:fmtDollar}},
+  {{key:'yr1_appreciation_dollars',label:'Appreciation',fmt:fmtDollar}},
+  {{key:'yr1_total_return',label:'Total Return',fmt:fmtDollar}},
+  {{key:'cap_rate',label:'Cap Rate',fmt:fmtPct}},
+  {{key:'irr_5yr',label:'5yr IRR',fmt:fmtPct}},
+  {{key:'landlord_friendliness_score',label:'LL Score',fmt:v=>v!=null?v+'/10':'—'}},
+  {{key:'median_home_price',label:'Price',fmt:fmtDollar}},
+];
+
+let roiSort = {{col:'yr1_total_roi', asc:false}};
+
+function renderROI(){{
+  // Add ROI rank
+  const roiSorted = [...DATA_MARKETS].sort((a,b)=>{{
+    const va = a.yr1_total_roi||0, vb = b.yr1_total_roi||0;
+    return vb - va;
+  }});
+  roiSorted.forEach((m,i)=>{{ m._roi_rank = i+1; }});
+
+  let head = '';
+  ROI_COLS.forEach(c=>{{
+    const arrow = roiSort.col===c.key ? (roiSort.asc?'&#9650;':'&#9660;') : '';
+    head += `<th onclick="sortROI('${{c.key}}')">${{c.label}}<span class="sort-arrow">${{arrow}}</span></th>`;
+  }});
+  document.getElementById('roi-head').innerHTML = head;
+
+  const sorted = [...roiSorted].sort((a,b)=>{{
+    let va=a[roiSort.col], vb=b[roiSort.col];
+    if(va==null) return 1; if(vb==null) return -1;
+    if(typeof va==='string') return roiSort.asc?va.localeCompare(vb):vb.localeCompare(va);
+    return roiSort.asc?va-vb:vb-va;
+  }});
+
+  let body = '';
+  sorted.forEach(m=>{{
+    const roiVal = m.yr1_total_roi||0;
+    const rowColor = roiVal > 0.10 ? 'rgba(201,169,110,.08)' : roiVal > 0 ? '' : 'rgba(239,68,68,.05)';
+    body += `<tr style="background:${{rowColor}}">`;
+    ROI_COLS.forEach(c=>{{ body += `<td>${{c.fmt(m[c.key])}}</td>`; }});
+    body += '</tr>';
+  }});
+  document.getElementById('roi-body').innerHTML = body;
+
+  // Year 1 ROI waterfall chart — show breakdown for top market
+  const top = roiSorted[0];
+  if(top){{
+    const labels = ['Cash Flow','+ Equity Paydown','+ Appreciation','= Total Return'];
+    const vals = [top.annual_cash_flow||0, top.yr1_principal_paid||0, top.yr1_appreciation_dollars||0, top.yr1_total_return||0];
+    const colors = [vals[0]>=0?PALETTE[0]:PALETTE[4], PALETTE[1], PALETTE[2], PALETTE[0]];
+    Plotly.newPlot('roi-waterfall', [{{
+      x:labels, y:vals, type:'bar',
+      marker:{{color:colors}},
+      text:vals.map(v=>'$'+Math.round(v).toLocaleString()), textposition:'outside',
+      textfont:{{color:'#f5f5f7',size:13}},
+    }}], {{
+      ...PLOTLY_LAYOUT,
+      title:{{text:`Year 1 Return Breakdown: ${{shortName(top.cbsa_title)}} (${{fmtDollar(top.total_cash_per_property)}} invested)`,font:{{size:14,color:'#f5f5f7'}}}},
+      yaxis:{{...PLOTLY_LAYOUT.yaxis,tickformat:'$,.0f'}},
+    }}, PLOTLY_CFG);
+  }}
+}}
+
+function sortROI(col){{
+  if(roiSort.col===col) roiSort.asc=!roiSort.asc;
+  else {{ roiSort.col=col; roiSort.asc=false; }}
+  renderROI();
 }}
 
 // ══════════════════════════════════════════════════════════════════
@@ -681,6 +768,7 @@ function downloadMemo(){{
 // ── Init ──
 renderSummary();
 renderRankings();
+renderROI();
 initDeepDive();
 renderMemo();
 </script>

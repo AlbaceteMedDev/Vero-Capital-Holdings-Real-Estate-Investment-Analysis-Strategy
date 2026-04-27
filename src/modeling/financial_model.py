@@ -422,6 +422,19 @@ class FinancialModel:
             "annual_rent_growth_used": round(annual_rent_growth, 4),
         }
         metrics.update(irr_results)
+
+        # Year 1 Total ROI = (cash flow + equity buildup + appreciation) / cash invested
+        yr1_interest = loan_amount * self.interest_rate
+        yr1_principal_paid = max(0, annual_debt_service - yr1_interest)
+        yr1_appreciation_dollars = price * annual_appreciation
+        yr1_total_return = (noi - annual_debt_service) + yr1_principal_paid + yr1_appreciation_dollars
+        yr1_total_roi = yr1_total_return / total_cash if total_cash > 0 else 0
+
+        metrics["yr1_principal_paid"] = round(yr1_principal_paid, 2)
+        metrics["yr1_appreciation_dollars"] = round(yr1_appreciation_dollars, 2)
+        metrics["yr1_total_return"] = round(yr1_total_return, 2)
+        metrics["yr1_total_roi"] = round(yr1_total_roi, 4)
+
         return metrics
 
     def _compute_irr_for_period(
@@ -493,6 +506,8 @@ class FinancialModel:
             "max_properties_200k", "max_properties_500k",
             "annual_cash_flow", "annual_appreciation_used",
             "annual_rent_growth_used",
+            "yr1_principal_paid", "yr1_appreciation_dollars",
+            "yr1_total_return", "yr1_total_roi",
         ]
         keys += [f"irr_{p}yr" for p in self.hold_periods]
         return {k: None for k in keys}

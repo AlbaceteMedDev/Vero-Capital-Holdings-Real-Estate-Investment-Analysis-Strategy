@@ -43,11 +43,24 @@ def run_screen() -> None:
 
 
 def run_model() -> None:
-    """Execute the financial modeling pipeline."""
+    """Execute the financial modeling pipeline and filter out negative-IRR markets."""
+    import pandas as pd
     from src.modeling.financial_model import FinancialModel
+    from src.utils.constants import PROCESSED_DATA_DIR
 
     model = FinancialModel()
-    model.run()
+    df = model.run()
+
+    # Post-model filter: remove markets with negative 5-year IRR
+    before = len(df)
+    has_irr = df["irr_5yr"].notna()
+    df = df[~has_irr | (df["irr_5yr"] > 0)].copy()
+    removed = before - len(df)
+    if removed > 0:
+        logger.info(f"Removed {removed} markets with negative 5-year IRR ({len(df)} remaining)")
+        output_path = PROCESSED_DATA_DIR / "modeled_markets.parquet"
+        df.to_parquet(output_path, index=False)
+        logger.info(f"Updated modeled_markets.parquet: {len(df)} markets")
 
 
 def run_trends() -> None:
