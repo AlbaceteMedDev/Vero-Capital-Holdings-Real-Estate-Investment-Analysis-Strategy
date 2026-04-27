@@ -11,9 +11,9 @@ filters:
   min_job_growth_pct: 1.0          # Year-over-year percent
 
   # Housing
-  max_median_home_price: 250000    # USD — stay within acquisition range
+  max_median_home_price: 350000    # USD
   min_median_home_price: 60000     # Avoid distressed/declining markets
-  min_monthly_rent_to_price_pct: 0.7  # Monthly rent / price * 100 (cash flow viability)
+  min_monthly_rent_to_price_pct: 0.5  # Monthly rent / price * 100
   max_days_on_market: 90           # Market liquidity
 
   # Economic

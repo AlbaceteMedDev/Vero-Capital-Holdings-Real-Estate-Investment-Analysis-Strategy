@@ -51,10 +51,9 @@ def run_model() -> None:
     model = FinancialModel()
     df = model.run()
 
-    # Post-model filter: remove markets with negative 5-year IRR
+    # Post-model filter: require positive 5-year IRR (remove negative AND missing)
     before = len(df)
-    has_irr = df["irr_5yr"].notna()
-    df = df[~has_irr | (df["irr_5yr"] > 0)].copy()
+    df = df[df["irr_5yr"].notna() & (df["irr_5yr"] > 0)].copy()
     removed = before - len(df)
     if removed > 0:
         logger.info(f"Removed {removed} markets with negative 5-year IRR ({len(df)} remaining)")

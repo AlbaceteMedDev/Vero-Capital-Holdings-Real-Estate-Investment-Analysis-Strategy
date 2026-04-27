@@ -317,6 +317,39 @@ h2.section-title{{font-size:18px;color:var(--text);margin-bottom:16px;padding-bo
   </div>
 </div>
 
+<!-- Financing Scenario Simulator -->
+<div style="margin-top:32px">
+  <h2 class="section-title">Financing Scenario Simulator</h2>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:16px">See how returns change with different interest rates and down payments. Recalculates cash flow, total ROI, and properties acquirable for all markets in real time.</p>
+  <div class="cards cards-3" style="margin-bottom:16px">
+    <div class="card">
+      <div class="label">Interest Rate</div>
+      <input type="range" id="sim-rate" min="3" max="9" step="0.25" value="7" style="width:100%;accent-color:var(--primary);margin-top:8px">
+      <div class="value" id="sim-rate-label" style="font-size:22px">7.00%</div>
+    </div>
+    <div class="card">
+      <div class="label">Down Payment</div>
+      <input type="range" id="sim-down" min="10" max="100" step="5" value="25" style="width:100%;accent-color:var(--primary);margin-top:8px">
+      <div class="value" id="sim-down-label" style="font-size:22px">25%</div>
+    </div>
+    <div class="card">
+      <div class="label">Capital Budget</div>
+      <input type="range" id="sim-capital" min="100000" max="500000" step="25000" value="350000" style="width:100%;accent-color:var(--primary);margin-top:8px">
+      <div class="value" id="sim-capital-label" style="font-size:22px">$350,000</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table id="sim-table">
+      <thead><tr id="sim-head"></tr></thead>
+      <tbody id="sim-body"></tbody>
+    </table>
+  </div>
+  <div class="chart-box" style="margin-top:16px">
+    <div id="sim-chart" style="height:350px"></div>
+  </div>
+</div>
+</div>
+
 <!-- TAB 2: Market Rankings -->
 <div id="tab-rankings" class="tab">
   <h2 class="section-title">Market Rankings — Composite Score</h2>
@@ -765,10 +798,109 @@ function downloadMemo(){{
   a.click();
 }}
 
+// ── Financing Simulator ──
+function simMortgage(principal, annualRate, termYears){{
+  if(principal<=0||annualRate<=0) return 0;
+  const r=annualRate/12, n=termYears*12;
+  return principal*(r*Math.pow(1+r,n))/(Math.pow(1+r,n)-1);
+}}
+
+function runSimulator(){{
+  const rate = parseFloat(document.getElementById('sim-rate').value)/100;
+  const downPct = parseFloat(document.getElementById('sim-down').value)/100;
+  const capital = parseFloat(document.getElementById('sim-capital').value);
+  document.getElementById('sim-rate-label').textContent = (rate*100).toFixed(2)+'%';
+  document.getElementById('sim-down-label').textContent = (downPct*100).toFixed(0)+'%';
+  document.getElementById('sim-capital-label').textContent = '$'+capital.toLocaleString();
+
+  const ltv = 1 - downPct;
+  const closingPct = 0.03, rehabPct = 0.05, reservePct = 0.10;
+  const taxPct=0.012, insPct=0.005, maintPct=0.10, vacPct=0.08, mgmtPct=0.10, capexPct=0.05;
+
+  const results = DATA_MARKETS.map(m=>{{
+    const price = m.median_home_price||0;
+    const rent = m.median_rent||0;
+    if(price<=0||rent<=0) return null;
+
+    const loan = price*ltv;
+    const monthlyPmt = simMortgage(loan, rate, 30);
+    const annualDebt = monthlyPmt*12;
+    const grossRent = rent*12;
+    const egi = grossRent*(1-vacPct);
+    const opex = price*taxPct + price*insPct + grossRent*maintPct + grossRent*mgmtPct + grossRent*capexPct;
+    const noi = egi - opex;
+    const cf = noi - annualDebt;
+    const totalCash = price*downPct + price*closingPct + price*rehabPct + price*reservePct;
+    const coc = totalCash>0 ? cf/totalCash : 0;
+
+    const yr1Interest = loan*rate;
+    const yr1Principal = Math.max(0, annualDebt - yr1Interest);
+    const pg = (m.price_growth_pct||3)/100;
+    const yr1Apprec = price*pg;
+    const yr1Total = cf + yr1Principal + yr1Apprec;
+    const yr1Roi = totalCash>0 ? yr1Total/totalCash : 0;
+    const maxProps = totalCash>0 ? Math.floor(capital/totalCash) : 0;
+
+    return {{
+      market: m.cbsa_title, state: m.state_abbrev||'', ll: m.landlord_friendliness_score||0,
+      price, rent, noi:Math.round(noi), cf:Math.round(cf),
+      coc, yr1Roi, yr1Total:Math.round(yr1Total),
+      yr1Principal:Math.round(yr1Principal), yr1Apprec:Math.round(yr1Apprec),
+      totalCash:Math.round(totalCash), maxProps,
+      capRate: price>0?noi/price:0,
+      irr5: m.irr_5yr,
+    }};
+  }}).filter(Boolean).sort((a,b)=>b.yr1Roi-a.yr1Roi);
+
+  // Table
+  const cols = [
+    ['#',''],['Market','market'],['Yr1 ROI','yr1Roi'],['Cash Flow','cf'],
+    ['Equity','yr1Principal'],['Apprec','yr1Apprec'],['Total Rtn','yr1Total'],
+    ['CoC','coc'],['Cap Rate','capRate'],['Props','maxProps'],['Cash Req','totalCash'],['LL','ll'],
+  ];
+  let head = cols.map(c=>`<th>${{c[0]}}</th>`).join('');
+  document.getElementById('sim-head').innerHTML = head;
+
+  let body = '';
+  results.slice(0,15).forEach((r,i)=>{{
+    const bg = r.coc>0?'rgba(201,169,110,.08)':r.yr1Roi>0?'':'rgba(239,68,68,.05)';
+    body += `<tr style="background:${{bg}}">
+      <td>${{i+1}}</td><td>${{shortName(r.market)}}</td>
+      <td style="font-weight:700;color:${{r.yr1Roi>0?'#C9A96E':'#EF4444'}}">${{(r.yr1Roi*100).toFixed(1)}}%</td>
+      <td style="color:${{r.cf>=0?'#34D399':'#EF4444'}}">${{fmtDollar(r.cf)}}</td>
+      <td>${{fmtDollar(r.yr1Principal)}}</td><td>${{fmtDollar(r.yr1Apprec)}}</td><td>${{fmtDollar(r.yr1Total)}}</td>
+      <td style="color:${{r.coc>=0?'#34D399':'#EF4444'}}">${{(r.coc*100).toFixed(2)}}%</td>
+      <td>${{(r.capRate*100).toFixed(1)}}%</td>
+      <td>${{r.maxProps}}</td><td>${{fmtDollar(r.totalCash)}}</td><td>${{r.ll}}/10</td>
+    </tr>`;
+  }});
+  document.getElementById('sim-body').innerHTML = body;
+
+  // Chart: CoC at this rate vs the current 7%
+  const top10 = results.slice(0,10);
+  Plotly.newPlot('sim-chart', [
+    {{x:top10.map(r=>shortName(r.market)), y:top10.map(r=>r.coc*100), type:'bar',
+      name:`CoC @ ${{(rate*100).toFixed(1)}}%/${{(downPct*100).toFixed(0)}}% down`,
+      marker:{{color:top10.map(r=>r.coc>=0?PALETTE[0]:PALETTE[4])}},
+      text:top10.map(r=>(r.coc*100).toFixed(1)+'%'), textposition:'outside',
+      textfont:{{color:'#f5f5f7',size:11}},
+    }},
+  ], {{
+    ...PLOTLY_LAYOUT,
+    title:{{text:`Cash-on-Cash Return @ ${{(rate*100).toFixed(1)}}% Rate / ${{(downPct*100).toFixed(0)}}% Down`,font:{{size:14,color:'#f5f5f7'}}}},
+    yaxis:{{...PLOTLY_LAYOUT.yaxis, title:'Cash-on-Cash (%)', ticksuffix:'%'}},
+  }}, PLOTLY_CFG);
+}}
+
+document.getElementById('sim-rate').addEventListener('input', runSimulator);
+document.getElementById('sim-down').addEventListener('input', runSimulator);
+document.getElementById('sim-capital').addEventListener('input', runSimulator);
+
 // ── Init ──
 renderSummary();
 renderRankings();
 renderROI();
+runSimulator();
 initDeepDive();
 renderMemo();
 </script>
